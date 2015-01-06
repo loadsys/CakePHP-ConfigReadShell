@@ -5,34 +5,14 @@
  * @package App.Console.Command
  */
 
-if (!defined('CONFIG_READ_SHELL_HELP')) {
-	define('CONFIG_READ_SHELL_HELP', <<<EOD
-Configure Read Shell
-
-Provides CLI access to variables defined in the Configure class of the host
-CakePHP application. Will output the value of any keys passed as arguments.
-Equivelant to `Configure::read('Key.Name')`.
-
-Usage:
-
-./cake/Console/cake config_read [-h] [-b] Key.Name [Second.Key]
-
-	-b	Always use bash variable deinfition formatting. When
-		enabled, output will be formatted as `KEY_NAME='value'`.
-		This option is auto-enabled if multiple keys are
-		provided on the command line, or if the value for the
-		requested key is itself an array. When multiple values
-		are returned, each will be output on its own line.
-EOD
-	);
-}
+App::uses('Shell', 'Console');
 
 /**
  * ConfigReadShell class.
  *
  * Provide a command line interface for fetching the values of keys from
  * the `Configure` utility class. Called via
- * `../cake/console/cake config_read Key.Name` from your `app/` dir.
+ * `./vendor/bin/cake config_read.config_read Key.Name`.
  */
 class ConfigReadShell extends Shell {
 
@@ -56,15 +36,6 @@ class ConfigReadShell extends Shell {
 	 */
 	public function _welcome() {
 		// Do nothing.
-	}
-
-	/**
-	 * Prints usage information to the console.
-	 *
-	 * @return void
-	 */
-	public function help() {
-		$this->out(CONFIG_READ_SHELL_HELP);
 	}
 
 	/**
@@ -177,5 +148,32 @@ class ConfigReadShell extends Shell {
 		}
 
 		$this->out(sprintf($format, $key, $val));
+	}
+
+	/**
+	 * getOptionParser
+	 *
+	 * Processing command line options.
+	 *
+	 * @access	public
+	 * @return	void
+	 */
+	public function getOptionParser() {
+		$parser = parent::getOptionParser();
+		$parser
+			->addArgument('key', array(
+				'help' => 'The Key.name to fetch from Configure::read(). Multiple keys may be specified, separated by spaces.',
+				'required' => true,
+			))
+			->addOption('bash', array(
+				'short' => 'b',
+				'boolean' => true,
+				'default' => false,
+				'help' => __('Always use bash variable deinfition formatting. When enabled, output will be formatted as `KEY_NAME=\'value\'`. This option is auto-enabled if multiple keys are provided on the command line, or if the value for the requested key is itself an array. When multiple values are returned, each will be output on its own line.')
+			))
+			->description(__('Provides CLI access to variables defined in the Configure class of the host
+CakePHP application. Will output the value of any keys passed as arguments.
+Equivelant to `Configure::read(\'Key.Name\')`.'));
+		return $parser;
 	}
 }
