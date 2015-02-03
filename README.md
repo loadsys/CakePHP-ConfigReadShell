@@ -46,6 +46,11 @@ $ ./lib/Console/cake config_read.config_read -b Key.Name
 KEY_NAME='foo'
 ```
 
+## TODO
+
+* Unit tests.
+* Travis-CI setup.
+
 
 ## Support
 
