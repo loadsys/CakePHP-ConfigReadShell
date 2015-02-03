@@ -1,25 +1,28 @@
 {
-	"name": "loadsys/config-read",
-	"description": "A CakePHP plugin that provides a Shell to read an app's Configure vars from the command line.",
-	"type": "cakephp-plugin",
-	"keywords": [
-		"cakephp",
-		"configure",
-		"shell"
-	],
-	"homepage": "https://github.com/loadsys/CakePHP-ConfigReadShell",
-	"license": "MIT",
-	"authors": [
-		{
-			"name": "Brian Porter",
-			"email": "beporter@users.sourceforge.net"
-		}
-	],
-	"support": {
-		"issues": "https://github.com/loadsys/CakePHP-ConfigReadShell/issues",
-		"source": "https://github.com/loadsys/CakePHP-ConfigReadShell"
-	},
-	"require": {
-		"composer/installers": "*"
-	}
+  "name": "loadsys/config-read",
+  "description": "A CakePHP plugin that provides a Shell to read an app's Configure vars from the command line.",
+  "type": "cakephp-plugin",
+  "keywords": [
+    "cakephp",
+    "configure",
+    "shell"
+  ],
+  "homepage": "https://github.com/loadsys/CakePHP-ConfigReadShell",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Brian Porter",
+      "email": "beporter@users.sourceforge.net"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/loadsys/CakePHP-ConfigReadShell/issues",
+    "source": "https://github.com/loadsys/CakePHP-ConfigReadShell"
+  },
+  "require": {
+    "composer/installers": "*"
+  },
+  "extra": {
+    "installer-name": "ConfigRead"
+  }
 }
