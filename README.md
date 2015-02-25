@@ -2,8 +2,9 @@
 
 A CakePHP plugin that provides a Shell to read an app's Configure vars from the command line.
 
-* For the Cake 2.x version of this plugin, please use the repo's `master` branch.
-* For the Cake 1.3 version, use the `1.3` branch. (Note: we don't expect to actively maintain the 1.3 version. It's here because it started life as a 1.3 Shell.)
+* This is the Cake 1.3 version of the plugin, which exists on the `cake-1.3` branch. (semver `1.*`) **Note:** we don't expect to actively maintain the 1.3 version. It's here because the project started life as a 1.3 Shell.
+* For the Cake 2.x version of this plugin, please use the repo's `cake-2.x` branch (semver `2.*`).
+* For the Cake 3.x version of this plugin, please use the repo's `master` branch. (semver `3.*`)
 
 
 ## Requirements
@@ -18,7 +19,7 @@ A CakePHP plugin that provides a Shell to read an app's Configure vars from the 
 
 or
 
-`git submodule add -b 1.3 https://github.com/loadsys/CakePHP-ConfigReadShell.git app/plugin/config_read`
+`git submodule add -b cake-1.3 https://github.com/loadsys/CakePHP-ConfigReadShell.git app/plugins/config_read`
 
 
 ## Usage
