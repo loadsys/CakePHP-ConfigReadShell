@@ -24,14 +24,14 @@ A CakePHP plugin that provides a Shell to read an app's Configure vars from the 
 
 ```shell
 $ cd path/to/app/
-$ ./bin/cake config_read.config_read Key.Name
+$ ./bin/cake ConfigRead Key.Name
 'foo'
 ```
 
 ### Format as a bash variable definition
 
 ```shell
-$ ./bin/cake config_read.config_read Key.Name Second.Key
+$ ./bin/cake ConfigRead Key.Name Second.Key
 KEY_NAME='foo'
 SECOND_KEY_FIRST='bar'
 SECOND_KEY_SECOND='baz'
@@ -41,7 +41,7 @@ SECOND_KEY_THIRD='42'
 Note that this format is automatically used whenever more than one key is returned. For example, if you request a key that contains an array, all values in the array will be returned sequentially. Alternatively, if you pass multiple keys on the command line, they will be returned. The format can also be forced using the `-b` or `--bash` command line switch:
 
 ```shell
-$ ./bin/cake config_read.config_read -b Key.Name
+$ ./bin/cake ConfigRead -b Key.Name
 KEY_NAME='foo'
 ```
 
