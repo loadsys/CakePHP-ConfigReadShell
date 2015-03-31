@@ -16,7 +16,7 @@ A CakePHP plugin that provides a Shell to read an app's Configure vars from the 
 
 ## Installation
 
-`composer require loadsys/config-read:3.*`
+`composer require loadsys/config-read:~3.0`
 
 
 
