@@ -4,8 +4,11 @@
  *
  * @package App.Console.Command
  */
+namespace ConfigRead\Shell;
 
-App::uses('Shell', 'Console');
+use Cake\Console\Shell;
+use Cake\Core\Configure;
+
 
 /**
  * ConfigReadShell class.
