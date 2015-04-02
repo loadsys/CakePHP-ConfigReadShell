@@ -22,7 +22,15 @@
   "require": {
     "composer/installers": "*"
   },
-  "extra": {
-    "installer-name": "ConfigRead"
+  "autoload": {
+    "psr-4": {
+      "ConfigRead\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "ConfigRead\\Test\\": "tests",
+      "Cake\\Test\\": "vendor/cakephp/cakephp/test"
+    }
   }
 }
