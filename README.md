@@ -51,18 +51,21 @@ KEY_NAME='foo'
 ```
 
 
-## Support
+## Contributing ##
 
-For bugs and feature requests, please use the [Issues](https://github.com/loadsys/CakePHP-ConfigReadShell/issues).
+### Reporting Issues ###
+
+Please use [GitHub Isuses](https://github.com/loadsys/CakePHP-ConfigReadShell/issues) for listing any known defects or issues.
+
+### Development ###
+
+When developing this plugin, please fork and issue a PR for any new development.
+
+## License ##
+
+[MIT](https://github.com/loadsys/CakePHP-ConfigReadShell/blob/master/LICENSE.md)
 
 
-## Contributing
+## Copyright ##
 
-Please feel free to open a new Issue, or fork the repo and submit a PR.
-
-
-## License
-
-Copyright 2015 Loadsys Web Strategies. All rights reserved.
-
-Licensed under the [MIT](http://www.opensource.org/licenses/mit-license.php) License. Redistributions of the source code included in this repository must retain the copyright notice found in each file.
+[Loadsys Web Strategies](http://www.loadsys.com) 2015
