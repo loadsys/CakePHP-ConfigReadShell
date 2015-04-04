@@ -51,21 +51,21 @@ KEY_NAME='foo'
 ```
 
 
-## Contributing ##
+## Contributing
 
-### Reporting Issues ###
+### Reporting Issues
 
 Please use [GitHub Isuses](https://github.com/loadsys/CakePHP-ConfigReadShell/issues) for listing any known defects or issues.
 
-### Development ###
+### Development
 
 When developing this plugin, please fork and issue a PR for any new development.
 
-## License ##
+## License
 
 [MIT](https://github.com/loadsys/CakePHP-ConfigReadShell/blob/master/LICENSE.md)
 
 
-## Copyright ##
+## Copyright
 
 [Loadsys Web Strategies](http://www.loadsys.com) 2015
