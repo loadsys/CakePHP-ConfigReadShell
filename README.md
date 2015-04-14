@@ -2,7 +2,7 @@
 
 [![Latest Version](https://img.shields.io/github/release/loadsys/CakePHP-ConfigReadShell.svg?style=flat-square)](https://github.com/loadsys/CakePHP-ConfigReadShell/releases)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Total Downloads](https://img.shields.io/packagist/dt/loadsys/config-read.svg?style=flat-square)](https://packagist.org/packages/loadsys/config-read)
+[![Total Downloads](https://img.shields.io/packagist/dt/loadsys/cakephp-config-read.svg?style=flat-square)](https://packagist.org/packages/loadsys/cakephp-config-read)
 
 A CakePHP plugin that provides a Shell to read an app's Configure vars from the command line.
 
@@ -20,7 +20,7 @@ A CakePHP plugin that provides a Shell to read an app's Configure vars from the 
 ## Installation
 
 ```bash
-$ composer require loadsys/config-read:2.*
+$ composer require loadsys/cakephp-config-read:~2.0
 ```
 
 or

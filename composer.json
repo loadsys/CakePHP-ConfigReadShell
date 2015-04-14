@@ -1,5 +1,5 @@
 {
-  "name": "loadsys/config-read",
+  "name": "loadsys/cakephp-config-read",
   "description": "A CakePHP plugin that provides a Shell to read an app's Configure vars from the command line.",
   "type": "cakephp-plugin",
   "keywords": [
