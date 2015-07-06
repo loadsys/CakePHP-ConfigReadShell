@@ -37,7 +37,8 @@ before_script:
 
 script:
   - vendor/bin/phpcs -p --extensions=php --standard=Loadsys src tests
-  - vendor/bin/phpunit --coverage-xml=tmp/clover.xml
+  - vendor/bin/phpunit --coverage-xml=build/logs/clover.xml
+  - php vendor/bin/coveralls -v
 
 notifications:
   email: false
