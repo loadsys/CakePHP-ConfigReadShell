@@ -37,8 +37,10 @@ before_script:
   - vendor/bin/phpcs --config-set installed_paths vendor/loadsys/loadsys_codesniffer,vendor/cakephp/cakephp-codesniffer
 
 script:
-  - vendor/bin/phpcs -p --extensions=php --standard=Loadsys src tests
-  - vendor/bin/phpunit --coverage-xml=build/logs/clover.xml
+  - vendor/bin/phpcs -np --extensions=php --standard=Loadsys ./src ./tests
+  - vendor/bin/phpunit --coverage-clover=build/logs/clover.xml
+
+after_script:
   - php vendor/bin/coveralls -v
 
 notifications:
