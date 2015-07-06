@@ -49,8 +49,6 @@ class ConfigReadShell extends Shell {
 	public function startup() {
 		parent::startup();
 
-		Configure::write('debug', 0);
-
 		if (isset($this->params['h'])) {
 			return $this->help();
 		}
