@@ -2,7 +2,7 @@
 /**
  * 
  */
-namespace ConfigReadShell\Test\TestCase\Shell;
+namespace ConfigRead\Test\TestCase\Shell;
 
 use ConfigRead\Shell\ConfigReadShell;
 
@@ -23,6 +23,8 @@ use Cake\TestSuite\TestCase;
  */
 class TestConfigReadShell extends ConfigReadShell
 {
+	public $formatBash = false;
+
 	public function fetchVal($key) {
 		return parent::fetchVal($key);
 	}
@@ -76,6 +78,49 @@ class ConfigReadShellTest extends TestCase
     }
 
 	/**
+	 * Helper for determing the subject class to initialize for testing.
+	 *
+	 * Methodology:
+	 *    - Take the name of this testing class: `SomeObjectTest`
+	 *    - If there exists a `TestSomeObject` class (presumed to extend
+	 *      SomeObject to expose private/protected methods for testing)
+	 *      then return that.
+	 *    - Otherwise, guess the namespace of the subject class by
+	 *      removing `*\Test\TestCase\*\*Test` from this testing classes
+	 *      name and use that.
+	 *    - As a side-effect, set a local class property with the
+	 *      non-namespaced `SomeObject` name for future reference in tests.
+	 *
+	 * @return string	The fully-namespaced class name to instantiate.
+	 * @see ::initSUT()
+	 */
+	protected function getSUTClassName()
+	{
+		$testCaseClass = get_class($this);
+			// -> ConfigRead\Test\TestCase\Shell\ConfigReadShellTest
+
+		$testingOverrideClass = preg_replace(
+			'/^(.*)\\\([^\\\]+)Test$/',
+			'\1\\\Test\2',
+			$testCaseClass
+		); // -> ConfigRead\Test\TestCase\Shell\TestConfigReadShell
+
+		$testedClass = preg_replace(
+			'/^(.*)\\\Test\\\TestCase\\\(.*)Test$/',
+			'\1\\\\\2',
+			$testCaseClass
+		); // -> ConfigRead\Shell\ConfigReadShell
+
+		$this->classBasename = preg_replace(
+			'/^.*\\\([^\\\]+)$/',
+			'\1',
+			$testedClass
+		); // -> ConfigReadShell
+
+		return (class_exists($testingOverrideClass) ? $testingOverrideClass : $testedClass);
+	}
+
+	/**
 	 * Helper for setting up an instance of the target Shell with proper
 	 * mocked methods.
 	 *
@@ -94,19 +139,17 @@ class ConfigReadShellTest extends TestCase
 	 * @return mixed	A partially mocked copy of the Shell matching the test class's name.
 	 */
 	protected function initSUT($additionalMocks = []) {
-		$defaultMocks = array(
-			'in', 'out', 'hr', 'help', 'error', 'err', '_stop', 'initialize', '_run', 'clear',
-		);
+		$defaultMocks = [
+			'help', //'in', 'out', 'hr', 'error', 'err', '_stop', 'initialize', '_run', 'clear',
+		];
         $this->io = $this->getMock('Cake\Console\ConsoleIo', [], [], '', false);
 
-		$class = preg_replace('/(.*)Test$/', '\1', get_class($this));
-		$testClass = preg_replace('/(.*)\\\([^\\\]+)$/', '\1\\\Test\2', $class);
-		$class = (class_exists($testClass) ? $testClass : $class);
-
+		$class = $this->getSUTClassName();
 		$shell = $this->getMock(
 			$class,
 			array_merge($defaultMocks, $additionalMocks),
-			[$this->io]
+			[$this->io],
+			"Mock_{$this->classBasename}"
 		);
 
 		$shell->OptionParser = $this->getMock('Cake\Console\ConsoleOptionParser', [], [null, false]);
@@ -138,45 +181,47 @@ class ConfigReadShellTest extends TestCase
         );
     }
 
-/*
-	public function startup() {
-		parent::startup();
-
-		//Configure::write('debug', 0);
-
-		if (isset($this->params['h'])) {
-			return $this->help();
-		}
-
-		if (isset($this->params['b'])) {
-			$this->formatBash = true;
-			// Make up for Cake snagging the next arg as the value for `-b`.
-			array_unshift($this->args, $this->params['b']);
-		}
-
-		if (count($this->args) > 1) {
-			$this->formatBash = true;
-		}
-	}
-
-*/
-
     /**
-     * testOut method
+     * Confirm that startup() engages bash output mode when -b flag is present.
      *
      * @return void
      */
-    public function testOut()
+    public function testStartupBashModeFlag()
     {
-        $this->io->expects($this->once())
-            ->method('out')
-            ->with('Just a test', 1);
+		$this->Shell->params = ['b' => 'canary'];
 
-        $this->Shell->out('Just a test');
+        $this->Shell->startup();
+        
+        $this->assertEquals(
+        	['canary'],
+        	$this->Shell->args,
+        	'Shell args should contain the value mistakenly captured by the -b option.'
+        );
+        $this->assertTrue(
+        	$this->Shell->formatBash,
+        	'Bash output formatting should be enabled by the presence of the -b option.'
+        );
     }
 
     /**
-     * test main.
+     * Confirm that startup() engages bash output mode when multiple args are present.
+     *
+     * @return void
+     */
+    public function testStartupBashModeMultiArgs()
+    {
+		$this->Shell->args = ['debug', 'Datasources.default.host'];
+
+        $this->Shell->startup();
+        
+        $this->assertTrue(
+        	$this->Shell->formatBash,
+        	'Bash output formatting should be enabled by the presence of multiple arguments.'
+        );
+    }
+
+    /**
+     * test main().
      *
      * @return void
      */
@@ -254,7 +299,8 @@ class ConfigReadShellTest extends TestCase
             'tasks' => [],
             'params' => [],
             'args' => [],
-            'interactive' => true
+            'interactive' => true,
+            'name' => str_replace('Shell', '', "Mock_{$this->classBasename}"),
         ];
         $result = $this->Shell->__debugInfo();
         $this->assertEquals($expected, $result);
