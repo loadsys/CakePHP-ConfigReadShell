@@ -2,7 +2,7 @@
 /**
  * ConfigReadShell
  *
- * @package App.Console.Command
+ * @package ConfigRead\Shell
  */
 namespace ConfigRead\Shell;
 
@@ -48,8 +48,6 @@ class ConfigReadShell extends Shell {
 	 */
 	public function startup() {
 		parent::startup();
-
-		Configure::write('debug', 0);
 
 		if (isset($this->params['h'])) {
 			return $this->help();
@@ -147,7 +145,7 @@ class ConfigReadShell extends Shell {
 
 		if ($this->formatBash) {
 			$key = strtoupper(str_replace('.', '_', $key));
-			$format = ($this->formatBash ? '%1$s=%2$s' : '%2$s');
+			$format = '%1$s=%2$s';
 		}
 
 		$this->out(sprintf($format, $key, $val));
@@ -160,6 +158,7 @@ class ConfigReadShell extends Shell {
 	 *
 	 * @access	public
 	 * @return	void
+	 * @codeCoverageIgnore
 	 */
 	public function getOptionParser() {
 		$parser = parent::getOptionParser();
