@@ -28,6 +28,26 @@ $ composer require loadsys/cakephp-config-read:~3.0
 
 ## Usage
 
+Imagine the following defined in `config/app.php`:
+
+```php
+return [
+	'Key' => [
+		'Name' => 'foo',
+	],
+	'Second' => [
+		'Key' => [
+			'First' => 'bar',
+			'Second' => 'baz',
+			'Third' => 42,
+		],
+	],
+];
+```
+
+
+To use this plugin, call it from the command line:
+
 ```shell
 $ cd path/to/app/
 $ ./bin/cake ConfigRead Key.Name
@@ -44,12 +64,40 @@ SECOND_KEY_SECOND='baz'
 SECOND_KEY_THIRD='42'
 ```
 
-Note that this format is automatically used whenever more than one key is returned. For example, if you request a key that contains an array, all values in the array will be returned sequentially. Alternatively, if you pass multiple keys on the command line, they will be returned. The format can also be forced using the `-b` or `--bash` command line switch:
+Note that this format is automatically used whenever more than one key is returned (unless the `--serialize` switch has been used). For example, if you request a key that contains an array, all values in the array will be returned sequentially. Alternatively, if you pass multiple keys on the command line, they will all be returned. The format can also be forced using the `-b` or `--bash` command line switch:
 
 ```shell
 $ ./bin/cake ConfigRead -b Key.Name
 KEY_NAME='foo'
 ```
+
+### Serializing output
+
+It is possible serialize the output from ConfigReadShell so that it can be consumed by other PHP scripts more easily by using the `-s` or `--serialize` command line switch.
+
+Requesting multiple keys on the command line will produce an array of those keys. Requesting a single scalar value will produce only that scalar value.
+
+This switch always overrides both the `--bash` switch and the Shell's automatic bash formatting.
+
+```shell
+$ ./bin/cake ConfigRead -s Key.Name Second.Key
+a:2:{s:8:"Key.Name";s:3:"foo";s:10:"Second.Key";a:3:{s:5:"First";s:3:"bar";s:6:"Second";s:3:"baz";s:5:"Third";i:42;}}
+# Check the result by piping into PHP and unserializing the result.
+$ ./bin/cake ConfigRead -s Key.Name Second.Key | php -r 'print_r(unserialize(file_get_contents("php://stdin")));'
+Array
+(
+    [Key.Name] => foo
+
+    [Second.Key] => Array
+		(
+			[First] => bar
+			[Second] => baz
+			[Third] => 42
+		)
+
+)
+```
+
 
 ## Gotchas
 
