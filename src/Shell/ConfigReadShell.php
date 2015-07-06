@@ -9,7 +9,6 @@ namespace ConfigRead\Shell;
 use Cake\Console\Shell;
 use Cake\Core\Configure;
 
-
 /**
  * ConfigReadShell class.
  *
@@ -156,8 +155,8 @@ class ConfigReadShell extends Shell {
 	 *
 	 * Processing command line options.
 	 *
-	 * @access	public
-	 * @return	void
+	 * @access public
+	 * @return CosnsoleOptionParser
 	 * @codeCoverageIgnore
 	 */
 	public function getOptionParser() {
