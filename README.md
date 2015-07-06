@@ -1,6 +1,8 @@
 # CakePHP-ConfigReadShell
 
 [![Latest Version](https://img.shields.io/github/release/loadsys/CakePHP-ConfigReadShell.svg?style=flat-square)](https://github.com/loadsys/CakePHP-ConfigReadShell/releases)
+[![Build Status](https://travis-ci.org/loadsys/CakePHP-ConfigReadShell.svg?branch=master)](https://travis-ci.org/loadsys/CakePHP-ConfigReadShell)
+[![Coverage Status](https://coveralls.io/repos/loadsys/CakePHP-ConfigReadShell/badge.svg?branch=master)](https://coveralls.io/r/loadsys/CakePHP-ConfigReadShell?branch=master)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 [![Total Downloads](https://img.shields.io/packagist/dt/loadsys/cakephp-config-read.svg?style=flat-square)](https://packagist.org/packages/loadsys/cakephp-config-read)
 
