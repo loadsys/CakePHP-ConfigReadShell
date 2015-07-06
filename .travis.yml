@@ -33,7 +33,7 @@ install:
 
 before_script:
   - phpenv rehash
-  - vendor/bin/phpcs --config-set installed_paths vendor/loadsys/loadsys_codesniffer/Loadsys,vendor/cakephp/cakephp-codesniffer
+  - vendor/bin/phpcs --config-set installed_paths vendor/loadsys/loadsys_codesniffer,vendor/cakephp/cakephp-codesniffer
 
 script:
   - vendor/bin/phpcs -p --extensions=php --standard=Loadsys src tests
