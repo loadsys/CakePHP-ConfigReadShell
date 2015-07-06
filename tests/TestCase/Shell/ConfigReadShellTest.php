@@ -16,6 +16,14 @@ use ConfigRead\Shell\ConfigReadShell;
  * Exposes protected methods for direct testing.
  */
 class TestConfigReadShell extends ConfigReadShell {
+	public function simpleFetchAndPrint() {
+		return parent::simpleFetchAndPrint();
+	}
+
+	public function serializedFetchAndPrint() {
+		return parent::serializedFetchAndPrint();
+	}
+
 	public function fetchVal($key) {
 		return parent::fetchVal($key);
 	}
@@ -82,7 +90,7 @@ class ConfigReadShellTest extends TestCase {
 	 * @param string $s The output string being printed.
 	 * @see ::initSUT()
 	 */
-	public function outputCollector($s) {
+	public function outputCollector($s, $newlines = 1, $level = Shell::NORMAL) {
 		$this->output[] = $s;
 	}
 
@@ -233,11 +241,32 @@ class ConfigReadShellTest extends TestCase {
 	}
 
 	/**
-	 * test main().
+	 * Confirm that startup() engages serialized output mode when -s flag is present.
 	 *
 	 * @return void
 	 */
-	public function testMain() {
+	public function testStartupSerializeModeFlag() {
+		$this->Shell->params = ['s' => 'canary'];
+
+		$this->Shell->startup();
+		
+		$this->assertEquals(
+			['canary'],
+			$this->Shell->args,
+			'Shell args should contain the value mistakenly captured by the -s option.'
+		);
+		$this->assertTrue(
+			$this->Shell->formatSerialize,
+			'Serialized output formatting should be enabled by the presence of the -s option.'
+		);
+	}
+
+	/**
+	 * test main() using simple (bash) output.
+	 *
+	 * @return void
+	 */
+	public function testMainSimple() {
 		$expected = [
 			'key' => 'val',
 			'debug' => true,
@@ -261,6 +290,9 @@ class ConfigReadShellTest extends TestCase {
 				->with($k, $v);
 		}
 
+		// Can't use runCommand() because it requires a host Cake app.
+		//$shell->runCommand(array_keys($expected));
+		// So simulate startup and execution directly:
 		$shell->startup();
 		$shell->main();
 
@@ -271,11 +303,11 @@ class ConfigReadShellTest extends TestCase {
 	}
 
 	/**
-	 * test main(), including associated protected methods.
+	 * test main(), including associated protected methods, using simple output.
 	 *
 	 * @return void
 	 */
-	public function testMainIntegrationStyle() {
+	public function testMainSimpleIntegration() {
 		$configure = [
 			'key' => 'val',
 			'debug' => true,
@@ -305,5 +337,79 @@ class ConfigReadShellTest extends TestCase {
 			$this->Shell->formatBash,
 			'Bash output should be engaged automatically by presence of multiple command line args.'
 		);
+	}
+
+	/**
+	 * test main(), including associated protected methods, using simple output.
+	 *
+	 * @param array $params Array of params to seed the Shell->params with.
+	 * @param array $args Array of arguments to seed the Shell->args with.
+	 * @param array $expected Array of generated output lines to compare to ::$output.
+	 * @param string $msg Optional PHPUnit assertion failure message.
+	 * @return void
+	 * @dataProvider provideSerializedArgs
+	 */
+	public function testMainSerializedIntegration($params, $args, $expected, $msg = '') {
+		$configure = [
+			'key' => 'val',
+			'debug' => true,
+			'ary' => [
+				'one' => 1,
+				'two' => '2',
+				3 => 'three',
+				'stdClass' => (new \StdClass()),
+			],
+		];
+
+		Configure::write($configure);
+		$this->Shell->params = $params;
+		$this->Shell->args = $args;
+
+		$this->Shell->startup();
+		$this->Shell->main();
+
+		$this->assertEquals(
+			$expected,
+			$this->output,
+			$msg
+		);
+		$this->assertTrue(
+			$this->Shell->formatSerialize,
+			'Serialized output should be engaged from the provided param.'
+		);
+	}
+
+	/**
+	 * Provides input arguments to testMainSerializedIntegration().
+	 *
+	 * All keys named in the [params] and [args] elements must exist in
+	 * $configure as defined in testMainSerializedIntegration() above.
+	 *
+	 * @return void
+	 * @dataProvider provideSerializedArgs
+	 */
+	public function provideSerializedArgs() {
+		return [
+			[
+				['s' => ''], // Params to load in the Shell.
+				[], // Args to load in the Shell.
+				['N;'], // Expected lines of output.
+				'Empty input should produce a serialized `null` string.', // PHPUnit assertion failure message.
+			],
+
+			[
+				['s' => 'key'],
+				[],
+				['s:3:"val";'],
+				'Single scalar value should be serialized directly.',
+			],
+
+			[
+				['s' => 'key'],
+				['ary.stdClass'],
+				['a:2:{s:3:"key";s:3:"val";s:12:"ary.stdClass";O:8:"stdClass":0:{}}'],
+				'Multiple requested keys should be combined into a (serialized) associative array.',
+			],
+		];
 	}
 }

@@ -6,6 +6,7 @@
  */
 namespace ConfigRead\Shell;
 
+use Cake\Console\ConsoleOutput;
 use Cake\Console\Shell;
 use Cake\Core\Configure;
 
@@ -31,6 +32,15 @@ class ConfigReadShell extends Shell {
 	public $formatBash = false;
 
 	/**
+	 * Stores command line switch value for whether to serialize all output.
+	 *
+	 * When present, it always overrides the --bash option.
+	 *
+	 * @var bool
+	 */
+	public $formatSerialize = false;
+
+	/**
 	 * Overrides the defaul welcome function in order to supporess the
 	 * normal "Welcome to CakePHP" Cake banner.
 	 *
@@ -48,6 +58,8 @@ class ConfigReadShell extends Shell {
 	public function startup() {
 		parent::startup();
 
+		$this->_io->outputAs(ConsoleOutput::RAW);
+
 		if (isset($this->params['h'])) {
 			return $this->help();
 		}
@@ -61,6 +73,12 @@ class ConfigReadShell extends Shell {
 		if (count($this->args) > 1) {
 			$this->formatBash = true;
 		}
+
+		if (isset($this->params['s'])) {
+			$this->formatSerialize = true;
+			// Make up for Cake snagging the next arg as the value for `-s`.
+			array_unshift($this->args, $this->params['s']);
+		}
 	}
 
 	/**
@@ -71,6 +89,21 @@ class ConfigReadShell extends Shell {
 	 * @return void
 	 */
 	public function main() {
+		if ($this->formatSerialize) {
+			$this->serializedFetchAndPrint();
+		} else {
+			$this->simpleFetchAndPrint();
+		}
+	}
+
+	/**
+	 * Iterate over provided args, printing them to the console as we go.
+	 *
+	 * Used to handle single scalar values and all --bash formatted output.
+	 *
+	 * @return void
+	 */
+	protected function simpleFetchAndPrint() {
 		foreach ($this->args as $key) {
 			$val = $this->fetchVal($key);
 
@@ -80,6 +113,29 @@ class ConfigReadShell extends Shell {
 
 			$this->iterateOnKey($key, $val);
 		}
+	}
+
+	/**
+	 * Iterate over provided args, collecting them for serialization.
+	 *
+	 * Used to --serialize formatted output. Returns a single requested
+	 * value as a directly-serialized string. If multiple keys were
+	 * provided on the command line, they are collected into an
+	 * associative array, which is serialized and echoed.
+	 *
+	 * @return void
+	 */
+	protected function serializedFetchAndPrint() {
+		$unserialized = [];
+		foreach ($this->args as $key) {
+			$unserialized[$key] = $this->fetchVal($key);
+		}
+
+		if (count($unserialized) === 1) {
+			$unserialized = array_shift($unserialized);
+		}
+
+		$this->out(serialize($unserialized), 0, Shell::QUIET);
 	}
 
 	/**
@@ -147,7 +203,7 @@ class ConfigReadShell extends Shell {
 			$format = '%1$s=%2$s';
 		}
 
-		$this->out(sprintf($format, $key, $val));
+		$this->out(sprintf($format, $key, $val), 1, Shell::QUIET);
 	}
 
 	/**
@@ -171,6 +227,12 @@ class ConfigReadShell extends Shell {
 				'boolean' => true,
 				'default' => false,
 				'help' => __('Always use bash variable deinfition formatting. When enabled, output will be formatted as `KEY_NAME=\'value\'`. This option is auto-enabled if multiple keys are provided on the command line, or if the value for the requested key is itself an array. When multiple values are returned, each will be output on its own line.')
+			))
+			->addOption('serialize', array(
+				'short' => 's',
+				'boolean' => true,
+				'default' => false,
+				'help' => __('Encode all output using PHP\'s `serialize()` method. Makes the Shell\'s output suitable for consumption by other PHP console scripts. Always overrides the --bash option. A single requested key will be serialized directly. Multiple requested keys will be combined into an associative array and then serialized.')
 			))
 			->description(__('Provides CLI access to variables defined in the Configure class of the host
 CakePHP application. Will output the value of any keys passed as arguments.
