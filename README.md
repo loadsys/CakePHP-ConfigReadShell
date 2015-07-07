@@ -116,6 +116,8 @@ The ConfigReadShell devotes about half of its codebase dealing with this for you
 
 The "gotcha" here is that ConfigReadShell has to maintain a static list of Configure keys that are consumed, and how to access them in their new container. **If your app consumes a non-standard Configure key during bootstrapping, you will not be able to obtain it from the ConfigReadShell.**
 
+An additionally exception is `EmailTransport`, which doesn't have a way of enumerating the named configs it is storing. Basically: `EmailTransport.default` will work, but just `EmailTransport` will not. (This caveat will no longer be an issue if cakephp/cakephp#6969 is merged.)
+
 
 ## Contributing
 
