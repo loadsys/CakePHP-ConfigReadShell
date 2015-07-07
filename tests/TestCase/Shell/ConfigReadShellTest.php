@@ -4,6 +4,7 @@
  */
 namespace ConfigRead\Test\TestCase\Shell;
 
+use Cake\Cache\Cache;
 use Cake\Console\ConsoleOptionParser;
 use Cake\Console\Shell;
 use Cake\Core\Configure;
@@ -156,7 +157,7 @@ class ConfigReadShellTest extends TestCase {
 	 */
 	protected function initSUT($additionalMocks = []) {
 		$defaultMocks = [
-			'help', //'in', 'out', 'hr', 'error', 'err', '_stop', 'initialize', '_run', 'clear',
+			'_displayHelp', 'error',
 		];
 
 		$this->io = $this->getMock('\Cake\Console\ConsoleIo', [], [], '', false);
@@ -174,15 +175,26 @@ class ConfigReadShellTest extends TestCase {
 			[$this->io]
 		);
 
+		$shell->expects($this->any())
+			->method('error')
+			->with($this->anything())
+			->will($this->returnCallback([$this, 'outputCollector']));
 		$shell->OptionParser = $this->getMock('\Cake\Console\ConsoleOptionParser', [], [null, false]);
+		$shell->params = [
+			'help' => false,
+			'verbose' => false,
+			'quiet' => false,
+			'bash' => false,
+			'serialize' => false,
+		];
 
 		//@TODO: Update this Cake2-centric code to load models in a Cake 3 Shell.
 		// Load and attach all fixtures defined in this test case.
-// 		foreach ($this->fixtures as $fixture) {
-// 			$modelName = str_replace('App.', '', implode('.', array_map('Inflector::classify', explode('.', $fixture))));
-// 			$propName = str_replace('.', '', $modelName);
-// 			$shell->{$propName} = ClassRegistry::init($modelName);
-// 		}
+		//foreach ($this->fixtures as $fixture) {
+		//	$modelName = str_replace('App.', '', implode('.', array_map('Inflector::classify', explode('.', $fixture))));
+		//	$propName = str_replace('.', '', $modelName);
+		//	$shell->{$propName} = ClassRegistry::init($modelName);
+		//}
 		return $shell;
 	}
 
@@ -192,14 +204,18 @@ class ConfigReadShellTest extends TestCase {
 	 * @return void
 	 */
 	public function testStartupHelp() {
-		$this->Shell->params = ['h' => true];
 		$this->Shell->expects($this->once())
-			->method('help')
-			->will($this->returnValue('canary'));
-		$this->assertEquals(
-			'canary',
-			$this->Shell->startup(),
-			'Shell should return help() when -h is passed.'
+			->method('_displayHelp');
+
+		Cache::config('_cake_core_', [
+			'className' => 'File',
+		]);
+		$this->Shell->startup();
+
+		$this->assertContains(
+			'No Configure keys provided.',
+			$this->output,
+			'Shell should output help() when no args are provided.'
 		);
 	}
 
@@ -207,58 +223,71 @@ class ConfigReadShellTest extends TestCase {
 	 * Confirm that startup() engages bash output mode when -b flag is present.
 	 *
 	 * @return void
+	 * @dataProvider provideStartupArgs
 	 */
-	public function testStartupBashModeFlag() {
-		$this->Shell->params = ['b' => 'canary'];
+	public function testStartupFlags($params, $args, $expected) {
+		$this->Shell->params = array_merge($this->Shell->params, $params);
+		$this->Shell->args = $args;
 
 		$this->Shell->startup();
 		
-		$this->assertEquals(
-			['canary'],
-			$this->Shell->args,
-			'Shell args should contain the value mistakenly captured by the -b option.'
-		);
-		$this->assertTrue(
-			$this->Shell->formatBash,
-			'Bash output formatting should be enabled by the presence of the -b option.'
-		);
+		foreach ($expected as $prop => $check) {
+			$this->assertEquals(
+				$check['val'],
+				$this->Shell->{$prop},
+				$check['msg']
+			);
+		}
 	}
 
-	/**
-	 * Confirm that startup() engages bash output mode when multiple args are present.
-	 *
-	 * @return void
-	 */
-	public function testStartupBashModeMultiArgs() {
-		$this->Shell->args = ['debug', 'Datasources.default.host'];
-
-		$this->Shell->startup();
-		
-		$this->assertTrue(
-			$this->Shell->formatBash,
-			'Bash output formatting should be enabled by the presence of multiple arguments.'
-		);
-	}
-
-	/**
-	 * Confirm that startup() engages serialized output mode when -s flag is present.
-	 *
-	 * @return void
-	 */
-	public function testStartupSerializeModeFlag() {
-		$this->Shell->params = ['s' => 'canary'];
-
-		$this->Shell->startup();
-		
-		$this->assertEquals(
-			['canary'],
-			$this->Shell->args,
-			'Shell args should contain the value mistakenly captured by the -s option.'
-		);
-		$this->assertTrue(
-			$this->Shell->formatSerialize,
-			'Serialized output formatting should be enabled by the presence of the -s option.'
-		);
+	public function provideStartupArgs() {
+		return [
+			[
+				['bash' => true], // params overrides
+				['dummy'], // args
+				[
+					'formatBash' => [
+						'val' => true,
+						'msg' => 'Bash output formatting should be enabled by the presence of the -b option.',
+					],
+					'formatSerialize' => [
+						'val' => false,
+						'msg' => 'Serialized output should remain off unless explicitly enabled.',
+					],
+				],
+			],
+			
+			[
+				[],
+				['dummy', 'dummy2'],
+				[
+					'formatBash' => [
+						'val' => true,
+						'msg' => 'Bash output formatting should be enabled by the presence of multiple arguments.',
+					],
+					'formatSerialize' => [
+						'val' => false,
+						'msg' => 'Serialized output should remain off unless explicitly enabled.',
+					],
+				],
+			],
+			
+			[
+				['serialize' => true],
+				['dummy', 'dummy2'],
+				[
+					'formatBash' => [
+						'val' => true,
+						'msg' => 'Bash output formatting should be enabled by the presence of multiple arguments, regardless of serialization option.',
+					],
+					'formatSerialize' => [
+						'val' => true,
+						'msg' => 'Serialized output formatting should be enabled by the presence of the -s option.',
+					],
+				],
+			],
+			
+		];
 	}
 
 	/**
@@ -342,14 +371,13 @@ class ConfigReadShellTest extends TestCase {
 	/**
 	 * test main(), including associated protected methods, using simple output.
 	 *
-	 * @param array $params Array of params to seed the Shell->params with.
 	 * @param array $args Array of arguments to seed the Shell->args with.
 	 * @param array $expected Array of generated output lines to compare to ::$output.
 	 * @param string $msg Optional PHPUnit assertion failure message.
 	 * @return void
 	 * @dataProvider provideSerializedArgs
 	 */
-	public function testMainSerializedIntegration($params, $args, $expected, $msg = '') {
+	public function testMainSerializedIntegration($args, $expected, $msg = '') {
 		$configure = [
 			'key' => 'val',
 			'debug' => true,
@@ -362,7 +390,7 @@ class ConfigReadShellTest extends TestCase {
 		];
 
 		Configure::write($configure);
-		$this->Shell->params = $params;
+		$this->Shell->params['serialize'] = true;
 		$this->Shell->args = $args;
 
 		$this->Shell->startup();
@@ -382,7 +410,7 @@ class ConfigReadShellTest extends TestCase {
 	/**
 	 * Provides input arguments to testMainSerializedIntegration().
 	 *
-	 * All keys named in the [params] and [args] elements must exist in
+	 * All keys named in the [args] elements must exist in
 	 * $configure as defined in testMainSerializedIntegration() above.
 	 *
 	 * @return void
@@ -391,22 +419,19 @@ class ConfigReadShellTest extends TestCase {
 	public function provideSerializedArgs() {
 		return [
 			[
-				['s' => ''], // Params to load in the Shell.
-				[], // Args to load in the Shell.
+				[''], // Args to load in the Shell.
 				['N;'], // Expected lines of output.
 				'Empty input should produce a serialized `null` string.', // PHPUnit assertion failure message.
 			],
 
 			[
-				['s' => 'key'],
-				[],
+				['key'],
 				['s:3:"val";'],
 				'Single scalar value should be serialized directly.',
 			],
 
 			[
-				['s' => 'key'],
-				['ary.stdClass'],
+				['key', 'ary.stdClass'],
 				['a:2:{s:3:"key";s:3:"val";s:12:"ary.stdClass";O:8:"stdClass":0:{}}'],
 				'Multiple requested keys should be combined into a (serialized) associative array.',
 			],
