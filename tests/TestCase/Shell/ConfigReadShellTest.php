@@ -4,6 +4,7 @@
  */
 namespace ConfigRead\Test\TestCase\Shell;
 
+use Cake\Cache\Cache;
 use Cake\Console\ConsoleOptionParser;
 use Cake\Console\Shell;
 use Cake\Core\Configure;
@@ -16,6 +17,14 @@ use ConfigRead\Shell\ConfigReadShell;
  * Exposes protected methods for direct testing.
  */
 class TestConfigReadShell extends ConfigReadShell {
+	public function simpleFetchAndPrint() {
+		return parent::simpleFetchAndPrint();
+	}
+
+	public function serializedFetchAndPrint() {
+		return parent::serializedFetchAndPrint();
+	}
+
 	public function fetchVal($key) {
 		return parent::fetchVal($key);
 	}
@@ -52,6 +61,52 @@ class ConfigReadShellTest extends TestCase {
 	public $output = [
 	];
 
+	public static $datasources = [
+		'sample1' => [
+			'className' => 'Cake\Database\Connection',
+			'driver' => 'Cake\Database\Driver\Mysql',
+			'persistent' => false,
+			'host' => 'localhost',
+			'username' => 'my_app',
+			'password' => 'secret',
+			'database' => 'my_app',
+		],
+		'sample2' => [
+			'className' => 'Cake\Database\Connection',
+			'driver' => 'Cake\Database\Driver\Sqlite',
+			'database' => ':memory:',
+		],
+	];
+
+	public static $salt = 'some salt value';
+
+	/**
+	 * Set up some fake datasources and security salt **once** before all tests.
+	 *
+	 * @return void
+	 * @see ::testMainSpecialKeys()
+	 */
+	public static function setUpBeforeClass() {
+		// Prime the ConnectionManager with some configs.
+		\Cake\Datasource\ConnectionManager::config(self::$datasources);
+
+		// Prime the security salt.
+		\Cake\Utility\Security::salt(self::$salt);
+	}
+
+	/**
+	 * Purge ConnectionManager configs.
+	 *
+	 * @return void
+	 */
+	public static function tearDownAfterClass() {
+		foreach (self::$datasources as $ds => $configs) {
+			\Cake\Datasource\ConnectionManager::drop($ds);
+		}
+
+		\Cake\Utility\Security::salt('');
+	}
+
 	/**
 	 * setUp method
 	 *
@@ -82,7 +137,7 @@ class ConfigReadShellTest extends TestCase {
 	 * @param string $s The output string being printed.
 	 * @see ::initSUT()
 	 */
-	public function outputCollector($s) {
+	public function outputCollector($s, $newlines = 1, $level = Shell::NORMAL) {
 		$this->output[] = $s;
 	}
 
@@ -148,7 +203,7 @@ class ConfigReadShellTest extends TestCase {
 	 */
 	protected function initSUT($additionalMocks = []) {
 		$defaultMocks = [
-			'help', //'in', 'out', 'hr', 'error', 'err', '_stop', 'initialize', '_run', 'clear',
+			'_displayHelp', 'error',
 		];
 
 		$this->io = $this->getMock('\Cake\Console\ConsoleIo', [], [], '', false);
@@ -166,15 +221,26 @@ class ConfigReadShellTest extends TestCase {
 			[$this->io]
 		);
 
+		$shell->expects($this->any())
+			->method('error')
+			->with($this->anything())
+			->will($this->returnCallback([$this, 'outputCollector']));
 		$shell->OptionParser = $this->getMock('\Cake\Console\ConsoleOptionParser', [], [null, false]);
+		$shell->params = [
+			'help' => false,
+			'verbose' => false,
+			'quiet' => false,
+			'bash' => false,
+			'serialize' => false,
+		];
 
 		//@TODO: Update this Cake2-centric code to load models in a Cake 3 Shell.
 		// Load and attach all fixtures defined in this test case.
-// 		foreach ($this->fixtures as $fixture) {
-// 			$modelName = str_replace('App.', '', implode('.', array_map('Inflector::classify', explode('.', $fixture))));
-// 			$propName = str_replace('.', '', $modelName);
-// 			$shell->{$propName} = ClassRegistry::init($modelName);
-// 		}
+		//foreach ($this->fixtures as $fixture) {
+		//	$modelName = str_replace('App.', '', implode('.', array_map('Inflector::classify', explode('.', $fixture))));
+		//	$propName = str_replace('.', '', $modelName);
+		//	$shell->{$propName} = ClassRegistry::init($modelName);
+		//}
 		return $shell;
 	}
 
@@ -184,14 +250,18 @@ class ConfigReadShellTest extends TestCase {
 	 * @return void
 	 */
 	public function testStartupHelp() {
-		$this->Shell->params = ['h' => true];
 		$this->Shell->expects($this->once())
-			->method('help')
-			->will($this->returnValue('canary'));
-		$this->assertEquals(
-			'canary',
-			$this->Shell->startup(),
-			'Shell should return help() when -h is passed.'
+			->method('_displayHelp');
+
+		Cache::config('_cake_core_', [
+			'className' => 'File',
+		]);
+		$this->Shell->startup();
+
+		$this->assertContains(
+			'No Configure keys provided.',
+			$this->output,
+			'Shell should output help() when no args are provided.'
 		);
 	}
 
@@ -199,45 +269,79 @@ class ConfigReadShellTest extends TestCase {
 	 * Confirm that startup() engages bash output mode when -b flag is present.
 	 *
 	 * @return void
+	 * @dataProvider provideStartupArgs
 	 */
-	public function testStartupBashModeFlag() {
-		$this->Shell->params = ['b' => 'canary'];
+	public function testStartupFlags($params, $args, $expected) {
+		$this->Shell->params = array_merge($this->Shell->params, $params);
+		$this->Shell->args = $args;
 
 		$this->Shell->startup();
 		
-		$this->assertEquals(
-			['canary'],
-			$this->Shell->args,
-			'Shell args should contain the value mistakenly captured by the -b option.'
-		);
-		$this->assertTrue(
-			$this->Shell->formatBash,
-			'Bash output formatting should be enabled by the presence of the -b option.'
-		);
+		foreach ($expected as $prop => $check) {
+			$this->assertEquals(
+				$check['val'],
+				$this->Shell->{$prop},
+				$check['msg']
+			);
+		}
+	}
+
+	public function provideStartupArgs() {
+		return [
+			[
+				['bash' => true], // params overrides
+				['dummy'], // args
+				[
+					'formatBash' => [
+						'val' => true,
+						'msg' => 'Bash output formatting should be enabled by the presence of the -b option.',
+					],
+					'formatSerialize' => [
+						'val' => false,
+						'msg' => 'Serialized output should remain off unless explicitly enabled.',
+					],
+				],
+			],
+			
+			[
+				[],
+				['dummy', 'dummy2'],
+				[
+					'formatBash' => [
+						'val' => true,
+						'msg' => 'Bash output formatting should be enabled by the presence of multiple arguments.',
+					],
+					'formatSerialize' => [
+						'val' => false,
+						'msg' => 'Serialized output should remain off unless explicitly enabled.',
+					],
+				],
+			],
+			
+			[
+				['serialize' => true],
+				['dummy', 'dummy2'],
+				[
+					'formatBash' => [
+						'val' => true,
+						'msg' => 'Bash output formatting should be enabled by the presence of multiple arguments, regardless of serialization option.',
+					],
+					'formatSerialize' => [
+						'val' => true,
+						'msg' => 'Serialized output formatting should be enabled by the presence of the -s option.',
+					],
+				],
+			],
+			
+		];
 	}
 
 	/**
-	 * Confirm that startup() engages bash output mode when multiple args are present.
+	 * test main() using simple (bash) output.
 	 *
 	 * @return void
 	 */
-	public function testStartupBashModeMultiArgs() {
-		$this->Shell->args = ['debug', 'Datasources.default.host'];
-
-		$this->Shell->startup();
-		
-		$this->assertTrue(
-			$this->Shell->formatBash,
-			'Bash output formatting should be enabled by the presence of multiple arguments.'
-		);
-	}
-
-	/**
-	 * test main().
-	 *
-	 * @return void
-	 */
-	public function testMain() {
+	public function testMainSimple() {
 		$expected = [
 			'key' => 'val',
 			'debug' => true,
@@ -261,6 +365,9 @@ class ConfigReadShellTest extends TestCase {
 				->with($k, $v);
 		}
 
+		// Can't use runCommand() because it requires a host Cake app.
+		//$shell->runCommand(array_keys($expected));
+		// So simulate startup and execution directly:
 		$shell->startup();
 		$shell->main();
 
@@ -271,11 +378,11 @@ class ConfigReadShellTest extends TestCase {
 	}
 
 	/**
-	 * test main(), including associated protected methods.
+	 * test main(), including associated protected methods, using simple output.
 	 *
 	 * @return void
 	 */
-	public function testMainIntegrationStyle() {
+	public function testMainSimpleIntegration() {
 		$configure = [
 			'key' => 'val',
 			'debug' => true,
@@ -305,5 +412,141 @@ class ConfigReadShellTest extends TestCase {
 			$this->Shell->formatBash,
 			'Bash output should be engaged automatically by presence of multiple command line args.'
 		);
+	}
+
+	/**
+	 * test main(), including associated protected methods, using simple output.
+	 *
+	 * @param array $args Array of arguments to seed the Shell->args with.
+	 * @param array $expected Array of generated output lines to compare to ::$output.
+	 * @param string $msg Optional PHPUnit assertion failure message.
+	 * @return void
+	 * @dataProvider provideSerializedArgs
+	 */
+	public function testMainSerializedIntegration($args, $expected, $msg = '') {
+		$configure = [
+			'key' => 'val',
+			'debug' => true,
+			'ary' => [
+				'one' => 1,
+				'two' => '2',
+				3 => 'three',
+				'stdClass' => (new \StdClass()),
+			],
+		];
+
+		Configure::write($configure);
+		$this->Shell->params['serialize'] = true;
+		$this->Shell->args = $args;
+
+		$this->Shell->startup();
+		$this->Shell->main();
+
+		$this->assertEquals(
+			$expected,
+			$this->output,
+			$msg
+		);
+		$this->assertTrue(
+			$this->Shell->formatSerialize,
+			'Serialized output should be engaged from the provided param.'
+		);
+	}
+
+	/**
+	 * Provides input arguments to testMainSerializedIntegration().
+	 *
+	 * All keys named in the [args] elements must exist in
+	 * $configure as defined in testMainSerializedIntegration() above.
+	 *
+	 * @return array
+	 */
+	public function provideSerializedArgs() {
+		return [
+			[
+				[''], // Args to load in the Shell.
+				['N;'], // Expected lines of output.
+				'Empty input should produce a serialized `null` string.', // PHPUnit assertion failure message.
+			],
+
+			[
+				['key'],
+				['s:3:"val";'],
+				'Single scalar value should be serialized directly.',
+			],
+
+			[
+				['key', 'ary.stdClass'],
+				['a:2:{s:3:"key";s:3:"val";s:12:"ary.stdClass";O:8:"stdClass":0:{}}'],
+				'Multiple requested keys should be combined into a (serialized) associative array.',
+			],
+		];
+	}
+
+
+	/**
+	 * test main(), requesting "special" config keys.
+	 *
+	 * @param array $args Array of arguments to seed the Shell->args with.
+	 * @param array $expected Array of generated output lines to compare to ::$output.
+	 * @param string $msg Optional PHPUnit assertion failure message.
+	 * @return void
+	 * @dataProvider provideSpecialKeyArgs
+	 */
+	public function testMainSpecialKeys($args, $expected, $msg = '') {
+		$this->Shell->params['serialize'] = true; // Makes comparing output easier.
+		$this->Shell->args = $args;
+
+		$this->Shell->startup();
+		$this->Shell->main();
+
+		$this->assertEquals(
+			$expected,
+			$this->output,
+			$msg
+		);
+		$this->assertTrue(
+			$this->Shell->formatSerialize,
+			'Serialized output should be engaged from the provided param.'
+		);
+	}
+
+	/**
+	 * Provides input arguments to testMainSpecialKeys().
+	 *
+	 * @return array
+	 */
+	public function provideSpecialKeyArgs() {
+		return [
+			[
+				['Datasources.sample2.database'], // Args to load in the Shell.
+				[serialize(self::$datasources['sample2']['database'])], // Expected lines of output.
+				'Requesting a deep subkey should return a scalar value.', // PHPUnit assertion failure message.
+			],
+
+			[
+				['Security.salt'],
+				[serialize(self::$salt)],
+				'The security salt should be routed through the Shell\'s internal helper.',
+			],
+
+			[
+				['EmailTransport.default.whatever'],
+				['N;'],
+				'There is no corresponding ::configured() method for Email::configTransports(), so we should get null back.',
+			],
+
+			[
+				['Datasources.sample2'],
+				['a:4:{s:9:"className";s:24:"Cake\Database\Connection";s:6:"driver";s:27:"Cake\Database\Driver\Sqlite";s:8:"database";s:8:":memory:";s:4:"name";s:7:"sample2";}'],
+				'Requesting an entire config should return the associative array.',
+			],
+
+			[
+				['Datasources'],
+				['a:3:{s:4:"test";a:5:{s:6:"scheme";s:6:"sqlite";s:9:"className";s:24:"Cake\Database\Connection";s:8:"database";s:8:":memory:";s:6:"driver";s:27:"Cake\Database\Driver\Sqlite";s:4:"name";s:4:"test";}s:7:"sample1";a:8:{s:9:"className";s:24:"Cake\Database\Connection";s:6:"driver";s:26:"Cake\Database\Driver\Mysql";s:10:"persistent";b:0;s:4:"host";s:9:"localhost";s:8:"username";s:6:"my_app";s:8:"password";s:6:"secret";s:8:"database";s:6:"my_app";s:4:"name";s:7:"sample1";}s:7:"sample2";a:4:{s:9:"className";s:24:"Cake\Database\Connection";s:6:"driver";s:27:"Cake\Database\Driver\Sqlite";s:8:"database";s:8:":memory:";s:4:"name";s:7:"sample2";}}'],
+				'Requesting ALL configs for a given special source should return all available configs.',
+			],
+		];
 	}
 }
