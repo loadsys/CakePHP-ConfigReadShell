@@ -219,8 +219,12 @@ class ConfigReadShell extends Shell {
 		$parser = parent::getOptionParser();
 		$parser
 			->addArgument('key', array(
-				'help' => 'The Key.name to fetch from Configure::read(). Multiple keys may be specified, separated by spaces.',
+				'help' => 'The Key.name to fetch from Configure::read().',
 				'required' => true,
+			))
+			->addArgument('key2', array(
+				'help' => 'Multiple keys may be specified, separated by spaces.',
+				'required' => false,
 			))
 			->addOption('bash', array(
 				'short' => 'b',
