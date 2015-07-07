@@ -9,6 +9,7 @@ namespace ConfigRead\Shell;
 use Cake\Console\ConsoleOutput;
 use Cake\Console\Shell;
 use Cake\Core\Configure;
+use Cake\Utility\Hash;
 
 /**
  * ConfigReadShell class.
@@ -39,6 +40,38 @@ class ConfigReadShell extends Shell {
 	 * @var bool
 	 */
 	public $formatSerialize = false;
+
+	/**
+	 * Make the shell aware of "unique" key requests.
+	 *
+	 * Cake 3 uses Configure::consume() on a number of Configure keys to
+	 * prime different Cake modules in `config/boostrap.php`.
+	 *
+	 * Cache::config(Configure::consume('Cache'));
+	 * ConnectionManager::config(Configure::consume('Datasources'));
+	 * Email::configTransport(Configure::consume('EmailTransport'));
+	 * Email::config(Configure::consume('Email'));
+	 * Log::config(Configure::consume('Log'));
+	 * Security::salt(Configure::consume('Security.salt'));
+	 *
+	 * This removes the configs from Configure, making them inaccessible
+	 * through standard means in this Shell.
+	 *
+	 * This property tracks specific key names and the class::method they
+	 * map to so we can perform the correct logic to fetch the values. For
+	 * example, a request for `Cache._cake_core_.className` would result
+	 * in a call like `\Cake\Cache\Cache::config('_cake_core_')['className']`.
+	 *
+	 * @var array
+	 */
+	public $specialKeys = [
+		'Cache' => '\Cake\Cache\Cache::config',
+		'Datasources' => '\Cake\Datasource\ConnectionManager::config',
+		'EmailTransport' => '\Cake\Network\Email\Email::configTransport',
+		'Email' => '\Cake\Network\Email\Email::config',
+		'Log' => '\Cake\Log\Log::config',
+		'Security.salt' => 'self::securitySaltHelper',
+	];
 
 	/**
 	 * Overrides the default welcome function in order to suppress the
@@ -128,6 +161,24 @@ class ConfigReadShell extends Shell {
 	}
 
 	/**
+	 * Value fetch dispatcher.
+	 *
+	 * Checks if the requested key is from a "special" class (that
+	 * normally has its configs `Configure::consume()`d) and routes the
+	 * request to the correct fetcher.
+	 *
+	 * @param string $key The string name of the key to fetch.
+	 * @return mixed The value as obtained from proper fetcher method.
+	 */
+	protected function fetchVal($key) {
+		if ($special = $this->specialKey($key)) {
+			return $this->fetchSpecial($special);
+		} else {
+			return $this->configRead($key);
+		}
+	}
+
+	/**
 	 * Value fetcher.
 	 *
 	 * Fetches the requested $key from the Configure class. Also serves as
@@ -136,8 +187,119 @@ class ConfigReadShell extends Shell {
 	 * @param string $key The string name of the key to fetch.
 	 * @return mixed The value as obtained from `Configure::read($key)`.
 	 */
-	protected function fetchVal($key) {
+	protected function configRead($key) {
 		return Configure::read($key);
+	}
+
+	/**
+	 * Determine if the provided key name matches one of our known "special" keys.
+	 *
+	 * If so, return an array of attributes including the callable method
+	 * to fetch values from the class, the config key name to pass (if any)
+	 * and the subkey to extract from the results (if any).
+	 *
+	 * Examples:
+	 *
+	 *   - 'Cache' -->
+	 *     [
+	 *         'callable' => '\Cake\Cache\Cache::config',
+	 *     ]
+	 *     // Will return all available Cache configs.
+	 *
+	 *   - 'Cache.default' -->
+	 *     [
+	 *         'callable' => '\Cake\Cache\Cache::config',
+	 *         'arg' => 'default',
+	 *     ]
+	 *     // Will return  all settings for the `default` Cache.
+	 *
+	 *   - 'Cache.default.className' -->
+	 *     [
+	 *         'callable' => '\Cake\Cache\Cache::config',
+	 *         'arg' => 'default',
+	 *         'subkey' => 'className',
+	 *     ]
+	 *     // Will return only the `className` value for the `default` Cache.
+	 *
+	 * Matching results are fed into ::fetchSpecial().
+	 *
+	 * @param string $search The dotted key name to check against our special keys.
+	 * @return array|false An array containing at least a [callable] key, and possibly [arg] and [subkey] keys. False on no match.
+	 * @see ::fetchSpecial()
+	 */
+	protected function specialKey($search) {
+		$callable = false;
+		foreach ($this->specialKeys as $key => $call) {
+			if (strpos($search, $key) === 0) {
+				$callable = $call;
+			}
+		}
+
+		if (!$callable) {
+			return false;
+		}
+		$special = [
+			'callable' => $callable,
+		];
+
+		$keyParts = explode('.', $search, 3);
+		if (isset($keyParts[1])) {
+			$special['arg'] = $keyParts[1];
+		}
+		if (isset($keyParts[2])) {
+			$special['subkey'] = $keyParts[2];
+		}
+
+		return $special;
+	}
+
+	/**
+	 * Performs necessary gymnastics to fetch "special" configs.
+	 *
+	 * There are three cases to handle:
+	 *
+	 *   1. A "deep" subkey like `Cache.default.className`. In this case,
+	 *      we need to fetch `Cache::config('default')` and then return
+	 *      the ['className'] from the result.
+	 *
+	 *   2. A single config array like `Cache.default. We need to fetch
+	 *      `Cache::config('default')` and return the whole thing.
+	 *
+	 *   3. All configs in a module like `Cache`. In this case we need to
+	 *      try calling `Cache::configured()` (if it exists), then looping
+	 *      over the results using each as a key name for a separate call
+	 *      to `Cache::config($name)` and accumulating all of the results
+	 *      together to return.
+	 *
+	 * @param array $special An array containing at least a [callable] key and possibly [arg] and [subkey]s.
+	 * @return mixed A single scalar value, or an associative array of sub-values.
+	 */
+	protected function fetchSpecial($special) {
+		if (isset($special['arg'])) {
+			$set = call_user_func($special['callable'], $special['arg']);
+		} else {
+			$allConfigCallable = str_replace(
+				'::config',
+				'::configured',
+				$special['callable'],
+				$replaceCount
+			);
+debug($allConfigCallable);
+debug($replaceCount);
+
+			$set = [];
+			if($replaceCount && is_callable($allConfigCallable)) {
+				foreach (call_user_func($allConfigCallable) as $configName) {
+					$set[$configName] = call_user_func($special['callable'], $configName);
+				}
+			}
+		}
+
+		if (isset($special['subkey'])) {
+			return Hash::get($set, $special['subkey']);
+		} else {
+			return $set;
+		}
 	}
 
 	/**
@@ -193,6 +355,25 @@ class ConfigReadShell extends Shell {
 		}
 
 		$this->out(sprintf($format, $key, $val), 1, Shell::QUIET);
+	}
+
+	/**
+	 * Provides a custom helper for fetching the App's Security.salt value.
+	 *
+	 * The call to Security::salt() method requires no arguments to get the
+	 * current value but we will have split the command line request for
+	 * `Security.salt` into
+	 * `call_user_func('\Cake\Utility\Security::salt', 'salt'). That will
+	 * **set** the salt to `salt` and return "salt" as the new value, which
+	 * isn't what we want. This method exists to be the callable function,
+	 * which itself passes the proper `null` value as the argument, which
+	 * in turn will return the _actual_ salt value.
+	 *
+	 * @param string $salt Because of how this is implemented, this will always be the literal string "salt" and will be ignored.
+	 @return string The result of calling `Security::salt(null);`
+	 */
+	private function securitySaltHelper($salt) {
+		return call_user_func('\Cake\Utility\Security::salt', null);
 	}
 
 	/**

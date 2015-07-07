@@ -10,7 +10,7 @@ A CakePHP plugin that provides a Shell to read an app's Configure vars from the 
 
 * This is the Cake 3.x version of the plugin, which exists on the `master` branch and is tracked by the `~3.0` semver.
 * For the Cake 2.x version of this plugin, please use the repo's `cake-2.x` branch. (semver `~2.0`)
-* For the Cake 1.3 version, use the `cake-1.3` branch. (semver `~1.0`) **Note:** we don't expect to actively maintain the 1.3 version. It's here because the project started life as a 1.3 Shell.
+* For the Cake 1.3 version, use the `cake-1.3` branch. (semver `~1.0`) **Note:** we don't expect to actively maintain or improve the 1.3 version. It's here because the project started life as a 1.3 Shell.
 
 
 ## Requirements
@@ -50,14 +50,14 @@ To use this plugin, call it from the command line:
 
 ```shell
 $ cd path/to/app/
-$ ./bin/cake ConfigRead Key.Name
+$ ./bin/cake ConfigRead.ConfigRead Key.Name
 'foo'
 ```
 
 ### Format as a bash variable definition
 
 ```shell
-$ ./bin/cake ConfigRead Key.Name Second.Key
+$ ./bin/cake ConfigRead.ConfigRead Key.Name Second.Key
 KEY_NAME='foo'
 SECOND_KEY_FIRST='bar'
 SECOND_KEY_SECOND='baz'
@@ -67,7 +67,7 @@ SECOND_KEY_THIRD='42'
 Note that this format is automatically used whenever more than one key is returned (unless the `--serialize` switch has been used). For example, if you request a key that contains an array, all values in the array will be returned sequentially. Alternatively, if you pass multiple keys on the command line, they will all be returned. The format can also be forced using the `-b` or `--bash` command line switch:
 
 ```shell
-$ ./bin/cake ConfigRead -b Key.Name
+$ ./bin/cake ConfigRead.ConfigRead -b Key.Name
 KEY_NAME='foo'
 ```
 
@@ -80,10 +80,10 @@ Requesting multiple keys on the command line will produce an array of those keys
 This switch always overrides both the `--bash` switch and the Shell's automatic bash formatting.
 
 ```shell
-$ ./bin/cake ConfigRead -s Key.Name Second.Key
+$ ./bin/cake ConfigRead.ConfigRead -s Key.Name Second.Key
 a:2:{s:8:"Key.Name";s:3:"foo";s:10:"Second.Key";a:3:{s:5:"First";s:3:"bar";s:6:"Second";s:3:"baz";s:5:"Third";i:42;}}
 # Check the result by piping into PHP and unserializing the result.
-$ ./bin/cake ConfigRead -s Key.Name Second.Key | php -r 'print_r(unserialize(file_get_contents("php://stdin")));'
+$ ./bin/cake ConfigRead.ConfigRead -s Key.Name Second.Key | php -r 'print_r(unserialize(file_get_contents("php://stdin")));'
 Array
 (
     [Key.Name] => foo
@@ -99,7 +99,7 @@ Array
 ```
 
 
-## Gotchas
+## Potential Gotchas
 
 ### "Consumed" Configure Vars
 
@@ -112,48 +112,9 @@ CakePHP 3 by default "consumes" some of its configs so as not to confused develo
 * Log/Log
 * Security.salt/Security::salt()
 
-The effect is that you can not use the ConfigReadShell to obtain Configure values for any of these keys since they no longer exist in Configure's store. (This is particularly troublesome if you are using [Environment-Aware Configs](https://github.com/beporter/CakePHP-EnvAwareness/tree/master/slides).)
+The ConfigReadShell devotes about half of its codebase dealing with this for you, allowing you to continue to fetch values using the Configure path (`Datasources.default.host` -> `localhost`) while in the background querying `ConnectionManager::config('default')['host']`. (This is particularly helpful if you are using [Environment-Aware Configs](https://github.com/beporter/CakePHP-EnvAwareness/tree/master/slides).)
 
-There are two possible workarounds:
-
-1. Use the `ConsoleShell` instead. For example:
-
-	```shell
-	$ echo 'use Cake\Datasource\ConnectionManager; foreach(ConnectionManager::config("default") as $k => $v) { echo "$k=" . escapeshellarg($v) . PHP_EOL; } exit;' | bin/cake Console -q
-	className='Cake\Database\Connection'
-	driver='Cake\Database\Driver\Mysql'
-	persistent=''
-	host='localhost'
-	username='my_app'
-	password='secret'
-	database='my_app'
-	encoding='utf8'
-	timezone='UTC'
-	cacheMetadata='1'
-	quoteIdentifiers=''
-	name='default'
-	```
-
-	This command is wrapped up in our [loadsys/cakephp-shell-scripts](https://github.com/loadsys/CakePHP-Shell-Scripts) repo as the [`db-credentials`](https://github.com/loadsys/CakePHP-Shell-Scripts/blob/76a24/db-credentials) script.
-
-2. Edit your `config/bootstrap.php` to use `Configure::read()` instead of `Configure::consume()`.
-
-	```diff
-	-Cache::config(Configure::consume('Cache'));
-	-ConnectionManager::config(Configure::consume('Datasources'));
-	-Email::configTransport(Configure::consume('EmailTransport'));
-	-Email::config(Configure::consume('Email'));
-	-Log::config(Configure::consume('Log'));
-	-Security::salt(Configure::consume('Security.salt'));
-	+Cache::config(Configure::read('Cache'));
-	+ConnectionManager::config(Configure::read('Datasources'));
-	+Email::configTransport(Configure::read('EmailTransport'));
-	+Email::config(Configure::read('Email'));
-	+Log::config(Configure::read('Log'));
-	+Security::salt(Configure::read('Security.salt'));
-	```
-
-	This will leave the Configure vars in place and allow commands like `bin/cake ConfigRead Datasources.default` to work as expected, but be warned that the values in Configure might not reflect the values actually being used by the various Cake modules.
+The "gotcha" here is that ConfigReadShell has to maintain a static list of Configure keys that are consumed, and how to access them in their new container. **If your app consumes a non-standard Configure key during bootstrapping, you will not be able to obtain it from the ConfigReadShell.**
 
 
 ## Contributing

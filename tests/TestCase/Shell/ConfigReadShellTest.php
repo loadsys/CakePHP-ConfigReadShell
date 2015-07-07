@@ -61,6 +61,51 @@ class ConfigReadShellTest extends TestCase {
 	public $output = [
 	];
 
+	public static $datasources = [
+		'sample1' => [
+			'className' => 'Cake\Database\Connection',
+			'driver' => 'Cake\Database\Driver\Mysql',
+			'persistent' => false,
+			'host' => 'localhost',
+			'username' => 'my_app',
+			'password' => 'secret',
+			'database' => 'my_app',
+		],
+		'sample2' => [
+			'className' => 'Cake\Database\Connection',
+			'driver' => 'Cake\Database\Driver\Sqlite',
+			'database' => ':memory:',
+		],
+	];
+
+	public static $salt = 'some salt value';
+
+	/**
+	 * Set up some fake datasources and security salt **once** before all tests.
+	 *
+	 * @return void
+	 * @see ::testMainSpecialKeys()
+	 */
+	public static function setUpBeforeClass() {
+		// Prime the ConnectionManager with some configs.
+		\Cake\Datasource\ConnectionManager::config(self::$datasources);
+
+		// Prime the security salt.
+		\Cake\Utility\Security::salt(self::$salt);
+	}
+
+	/**
+	 * Purge ConnectionManager configs.
+	 *
+	 * @return void
+	 */
+	public static function tearDownAfterClass() {
+		foreach (self::$datasources as $ds => $configs) {
+			\Cake\Datasource\ConnectionManager::drop($ds);
+		}
+		\Cake\Utility\Security::salt('');
+	}
+
 	/**
 	 * setUp method
 	 *
@@ -413,8 +458,7 @@ class ConfigReadShellTest extends TestCase {
 	 * All keys named in the [args] elements must exist in
 	 * $configure as defined in testMainSerializedIntegration() above.
 	 *
-	 * @return void
-	 * @dataProvider provideSerializedArgs
+	 * @return array
 	 */
 	public function provideSerializedArgs() {
 		return [
@@ -434,6 +478,74 @@ class ConfigReadShellTest extends TestCase {
 				['key', 'ary.stdClass'],
 				['a:2:{s:3:"key";s:3:"val";s:12:"ary.stdClass";O:8:"stdClass":0:{}}'],
 				'Multiple requested keys should be combined into a (serialized) associative array.',
+			],
+		];
+	}
+
+
+	/**
+	 * test main(), requesting "special" config keys.
+	 *
+	 * @param array $args Array of arguments to seed the Shell->args with.
+	 * @param array $expected Array of generated output lines to compare to ::$output.
+	 * @param string $msg Optional PHPUnit assertion failure message.
+	 * @return void
+	 * @dataProvider provideSpecialKeyArgs
+	 */
+	public function testMainSpecialKeys($args, $expected, $msg = '') {
+
+		$this->Shell->params['serialize'] = true; // Makes comparing output easier.
+		$this->Shell->args = $args;
+
+		$this->Shell->startup();
+		$this->Shell->main();
+
+		$this->assertEquals(
+			$expected,
+			$this->output,
+			$msg
+		);
+		$this->assertTrue(
+			$this->Shell->formatSerialize,
+			'Serialized output should be engaged from the provided param.'
+		);
+	}
+
+	/**
+	 * Provides input arguments to testMainSpecialKeys().
+	 *
+	 * @return array
+	 */
+	public function provideSpecialKeyArgs() {
+		return [
+			[
+				['Datasources.sample2.database'], // Args to load in the Shell.
+				[serialize(self::$datasources['sample2']['database'])], // Expected lines of output.
+				'Requesting a deep subkey should return a scalar value.', // PHPUnit assertion failure message.
+			],
+
+			[
+				['Security.salt'],
+				[serialize(self::$salt)],
+				'The security salt should be routed through the Shell\'s internal helper.',
+			],
+
+			[
+				['EmailTransport.default.whatever'],
+				['N;'],
+				'There is no corresponding ::configured() method for Email::configTransports(), so we should get null back.',
+			],
+
+			[
+				['Datasources.sample2'],
+				['a:4:{s:9:"className";s:24:"Cake\Database\Connection";s:6:"driver";s:27:"Cake\Database\Driver\Sqlite";s:8:"database";s:8:":memory:";s:4:"name";s:7:"sample2";}'],
+				'Requesting an entire config should return the associative array.',
+			],
+
+			[
+				['Datasources'],
+				['a:3:{s:4:"test";a:5:{s:6:"scheme";s:6:"sqlite";s:9:"className";s:24:"Cake\Database\Connection";s:8:"database";s:8:":memory:";s:6:"driver";s:27:"Cake\Database\Driver\Sqlite";s:4:"name";s:4:"test";}s:7:"sample1";a:8:{s:9:"className";s:24:"Cake\Database\Connection";s:6:"driver";s:26:"Cake\Database\Driver\Mysql";s:10:"persistent";b:0;s:4:"host";s:9:"localhost";s:8:"username";s:6:"my_app";s:8:"password";s:6:"secret";s:8:"database";s:6:"my_app";s:4:"name";s:7:"sample1";}s:7:"sample2";a:4:{s:9:"className";s:24:"Cake\Database\Connection";s:6:"driver";s:27:"Cake\Database\Driver\Sqlite";s:8:"database";s:8:":memory:";s:4:"name";s:7:"sample2";}}'],
+				'Requesting ALL configs for a given special source should return all available configs.',
 			],
 		];
 	}
