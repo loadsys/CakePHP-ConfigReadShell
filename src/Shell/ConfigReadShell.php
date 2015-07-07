@@ -171,7 +171,8 @@ class ConfigReadShell extends Shell {
 	 * @return mixed The value as obtained from proper fetcher method.
 	 */
 	protected function fetchVal($key) {
-		if ($special = $this->specialKey($key)) {
+		$special = $this->specialKey($key);
+		if ($special) {
 			return $this->fetchSpecial($special);
 		} else {
 			return $this->configRead($key);
@@ -238,6 +239,7 @@ class ConfigReadShell extends Shell {
 		if (!$callable) {
 			return false;
 		}
+
 		$special = [
 			'callable' => $callable,
 		];
@@ -246,6 +248,7 @@ class ConfigReadShell extends Shell {
 		if (isset($keyParts[1])) {
 			$special['arg'] = $keyParts[1];
 		}
+
 		if (isset($keyParts[2])) {
 			$special['subkey'] = $keyParts[2];
 		}
@@ -278,24 +281,23 @@ class ConfigReadShell extends Shell {
 		if (isset($special['arg'])) {
 			$set = call_user_func($special['callable'], $special['arg']);
 		} else {
-			$allConfigCallable = str_replace(
-				'::config',
+			$allConfigCallable = preg_replace(
+				'/::config$/',
 				'::configured',
 				$special['callable'],
+				-1,
 				$replaceCount
 			);
-debug($allConfigCallable);
-debug($replaceCount);
 
-			$set = [];
-			if($replaceCount && is_callable($allConfigCallable)) {
+			$set = null;
+			if ($replaceCount && is_callable($allConfigCallable)) {
 				foreach (call_user_func($allConfigCallable) as $configName) {
 					$set[$configName] = call_user_func($special['callable'], $configName);
 				}
 			}
 		}
 
-		if (isset($special['subkey'])) {
+		if (isset($special['subkey']) && is_array($set)) {
 			return Hash::get($set, $special['subkey']);
 		} else {
 			return $set;

@@ -103,6 +103,7 @@ class ConfigReadShellTest extends TestCase {
 		foreach (self::$datasources as $ds => $configs) {
 			\Cake\Datasource\ConnectionManager::drop($ds);
 		}
+
 		\Cake\Utility\Security::salt('');
 	}
 
@@ -493,7 +494,6 @@ class ConfigReadShellTest extends TestCase {
 	 * @dataProvider provideSpecialKeyArgs
 	 */
 	public function testMainSpecialKeys($args, $expected, $msg = '') {
-
 		$this->Shell->params['serialize'] = true; // Makes comparing output easier.
 		$this->Shell->args = $args;
 
