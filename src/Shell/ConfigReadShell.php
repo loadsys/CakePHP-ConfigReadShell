@@ -231,7 +231,7 @@ class ConfigReadShell extends Shell {
 	protected function specialKey($search) {
 		$callable = false;
 		foreach ($this->specialKeys as $key => $call) {
-			if (strpos($search, $key) === 0) {
+			if (strpos("{$search}.", "{$key}.") === 0) {
 				$callable = $call;
 			}
 		}
@@ -281,11 +281,10 @@ class ConfigReadShell extends Shell {
 		if (isset($special['arg'])) {
 			$set = call_user_func($special['callable'], $special['arg']);
 		} else {
-			$allConfigCallable = preg_replace(
-				'/::config$/',
+			$allConfigCallable = str_replace(
+				'::config',
 				'::configured',
 				$special['callable'],
-				-1,
 				$replaceCount
 			);
 
