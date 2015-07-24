@@ -105,18 +105,21 @@ Array
 
 CakePHP 3 by default "consumes" some of its configs so as not to confused developers. [`Configure::consume()`](http://book.cakephp.org/3.0/en/development/configuration.html#Cake\Core\Configure::consume) removes the configuration key from Configure, making it unavailable to the rest of the app. At the [time of this writing](https://github.com/cakephp/app/blob/a0f2c4/config/bootstrap.php#L136,L141), it does this for the following keys/classes:
 
-* Cache/Cache
-* Datasources/ConnectionManager
-* EmailTransport/Email
-* Email/Email
-* Log/Log
-* Security.salt/Security::salt()
+| _`[Configure.Key]`_  | _`Class::configEnumerationMethod()`_  | _`Class::configFetchMethod()`_  |
+|----------------------|---------------------------------------|---------------------------------|
+| `[Cache]`            | `Cache::configured()`                 | `Cache::config()`               |
+| `[Datasources]`      | `ConnectionManager::configured()`     | `ConnectionManager::config()`   |
+| `[EmailTransport]`   | `Email::configuredTransport()`        | `Email::configTransport()`      |
+| `[Email]`            | `Email::configured()`                 | `Email::config()`               |
+| `[Log]`              | `Log::configured()`                   | `Log::config()`                 |
+| `[Security.salt]`    | _(none)_                              | `Security::salt()`              |
 
-The ConfigReadShell devotes about half of its codebase dealing with this for you, allowing you to continue to fetch values using the Configure path (`Datasources.default.host` -> `localhost`) while in the background querying `ConnectionManager::config('default')['host']`. (This is particularly helpful if you are using [Environment-Aware Configs](https://github.com/beporter/CakePHP-EnvAwareness/tree/master/slides).)
 
-The "gotcha" here is that ConfigReadShell has to maintain a static list of Configure keys that are consumed, and how to access them in their new container. **If your app consumes a non-standard Configure key during bootstrapping, you will not be able to obtain it from the ConfigReadShell.**
+The ConfigReadShell devotes about half of its codebase dealing with this for you, allowing you to continue to fetch values using the Configure path (`Datasources.default.host` -> `localhost`) while in the background it is actually querying `ConnectionManager::config('default')['host']`. (This is particularly helpful if you are using [Environment-Aware Configs](https://github.com/beporter/CakePHP-EnvAwareness/tree/master/slides).)
 
-An additionally exception is `EmailTransport`, which doesn't have a way of enumerating the named configs it is storing. Basically: `EmailTransport.default` will work, but just `EmailTransport` will not. (This caveat will no longer be an issue if cakephp/cakephp#6969 is merged.)
+The "gotcha" here is that ConfigReadShell has to maintain a hard-coded list of Configure keys that are normally consumed, and how to access them in their new container. This is further complicated by the fact that not all consumed configs are loaded into or retrieved from their containers the same way, although the base assumption is that the container implements the [`StaticConfigTrait`](http://api.cakephp.org/3.0/class-Cake.Core.StaticConfigTrait.html) and so will have `::config()` and `::configured()` available.
+
+:warning: **If your app uses `Configure::consume()` on any non-standard Configure key during bootstrapping, you will not be able to obtain any child values of those keys from the ConfigReadShell.**
 
 
 ## Contributing
