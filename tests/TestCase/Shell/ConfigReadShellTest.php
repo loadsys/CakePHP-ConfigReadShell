@@ -276,7 +276,7 @@ class ConfigReadShellTest extends TestCase {
 		$this->Shell->args = $args;
 
 		$this->Shell->startup();
-		
+
 		foreach ($expected as $prop => $check) {
 			$this->assertEquals(
 				$check['val'],
@@ -302,7 +302,7 @@ class ConfigReadShellTest extends TestCase {
 					],
 				],
 			],
-			
+
 			[
 				[],
 				['dummy', 'dummy2'],
@@ -317,7 +317,7 @@ class ConfigReadShellTest extends TestCase {
 					],
 				],
 			],
-			
+
 			[
 				['serialize' => true],
 				['dummy', 'dummy2'],
@@ -332,7 +332,6 @@ class ConfigReadShellTest extends TestCase {
 					],
 				],
 			],
-			
 		];
 	}
 
