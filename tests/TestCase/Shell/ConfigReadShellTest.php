@@ -8,8 +8,11 @@ use Cake\Cache\Cache;
 use Cake\Console\ConsoleOptionParser;
 use Cake\Console\Shell;
 use Cake\Core\Configure;
+use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use Cake\Utility\Security;
 use ConfigRead\Shell\ConfigReadShell;
+use \StdClass;
 
 /**
  * TestConfigReadShell class
@@ -43,14 +46,12 @@ class TestConfigReadShell extends ConfigReadShell {
  *
  */
 class ConfigReadShellTest extends TestCase {
-
 	/**
 	 * Fixtures used in this test case
 	 *
 	 * @var array
 	 */
-	public $fixtures = [
-	];
+	public $fixtures = [];
 
 	/**
 	 * Acts as an accumulator for output produced by the Shell.
@@ -58,8 +59,7 @@ class ConfigReadShellTest extends TestCase {
 	 * @var array
 	 * @see ::initSUIT()
 	 */
-	public $output = [
-	];
+	public $output = [];
 
 	public static $datasources = [
 		'sample1' => [
@@ -88,10 +88,10 @@ class ConfigReadShellTest extends TestCase {
 	 */
 	public static function setUpBeforeClass() {
 		// Prime the ConnectionManager with some configs.
-		\Cake\Datasource\ConnectionManager::config(self::$datasources);
+		ConnectionManager::config(self::$datasources);
 
 		// Prime the security salt.
-		\Cake\Utility\Security::salt(self::$salt);
+		Security::salt(self::$salt);
 	}
 
 	/**
@@ -101,10 +101,10 @@ class ConfigReadShellTest extends TestCase {
 	 */
 	public static function tearDownAfterClass() {
 		foreach (self::$datasources as $ds => $configs) {
-			\Cake\Datasource\ConnectionManager::drop($ds);
+			ConnectionManager::drop($ds);
 		}
 
-		\Cake\Utility\Security::salt('');
+		Security::salt('');
 	}
 
 	/**
@@ -430,7 +430,7 @@ class ConfigReadShellTest extends TestCase {
 				'one' => 1,
 				'two' => '2',
 				3 => 'three',
-				'stdClass' => (new \StdClass()),
+				'stdClass' => (new StdClass()),
 			],
 		];
 
