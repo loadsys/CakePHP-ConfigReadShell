@@ -15,7 +15,7 @@ A CakePHP plugin that provides a Shell to read an app's Configure vars from the 
 
 ## Requirements
 
-* CakePHP 3.0.0+
+* CakePHP 3.1.0+
 * PHP 5.6+
 
 
