@@ -67,8 +67,8 @@ class ConfigReadShell extends Shell {
 	public $specialKeys = [
 		'Cache' => '\Cake\Cache\Cache::config',
 		'Datasources' => '\Cake\Datasource\ConnectionManager::config',
-		'EmailTransport' => '\Cake\Network\Email\Email::configTransport',
-		'Email' => '\Cake\Network\Email\Email::config',
+		'EmailTransport' => '\Cake\Mailer\Email::configTransport',
+		'Email' => '\Cake\Mailer\Email::config',
 		'Log' => '\Cake\Log\Log::config',
 		'Security.salt' => 'self::securitySaltHelper',
 	];
