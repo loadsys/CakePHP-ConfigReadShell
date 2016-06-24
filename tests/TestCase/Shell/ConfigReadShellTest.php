@@ -163,7 +163,7 @@ class ConfigReadShellTest extends TestCase {
 			// -> ConfigRead\Test\TestCase\Shell\ConfigReadShellTest
 
 		$testingOverrideClass = preg_replace(
-			'/^(.*)\\\([^\\\]+)Test$/',
+			"/^(.*)\\\([^\\\]+)Test$/",
 			'\1\\\Test\2',
 			$testCaseClass
 		); // -> ConfigRead\Test\TestCase\Shell\TestConfigReadShell
@@ -175,7 +175,7 @@ class ConfigReadShellTest extends TestCase {
 		); // -> ConfigRead\Shell\ConfigReadShell
 
 		$this->classBasename = preg_replace(
-			'/^.*\\\([^\\\]+)$/',
+			"/^.*\\\([^\\\]+)$/",
 			'\1',
 			$testedClass
 		); // -> ConfigReadShell
