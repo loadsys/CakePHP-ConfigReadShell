@@ -67,8 +67,8 @@ class ConfigReadShell extends Shell {
 	public $specialKeys = [
 		'Cache' => '\Cake\Cache\Cache::config',
 		'Datasources' => '\Cake\Datasource\ConnectionManager::config',
-		'EmailTransport' => '\Cake\Network\Email\Email::configTransport',
-		'Email' => '\Cake\Network\Email\Email::config',
+		'EmailTransport' => '\Cake\Mailer\Email::configTransport',
+		'Email' => '\Cake\Mailer\Email::config',
 		'Log' => '\Cake\Log\Log::config',
 		'Security.salt' => 'self::securitySaltHelper',
 	];
@@ -393,13 +393,13 @@ class ConfigReadShell extends Shell {
 				'short' => 'b',
 				'boolean' => true,
 				'default' => false,
-				'help' => __('Always use bash variable deinfition formatting. When enabled, output will be formatted as `KEY_NAME=\'value\'`. This option is auto-enabled if multiple keys are provided on the command line, or if the value for the requested key is itself an array. When multiple values are returned, each will be output on its own line.')
+				'help' => __('Always use bash variable deinfition formatting. When enabled, output will be formatted as `KEY_NAME=\'value\'`. This option is auto-enabled if multiple keys are provided on the command line, or if the value for the requested key is itself an array. When multiple values are returned, each will be output on its own line.'),
 			])
 			->addOption('serialize', [
 				'short' => 's',
 				'boolean' => true,
 				'default' => false,
-				'help' => __('Encode all output using PHP\'s `serialize()` method. Makes the Shell\'s output suitable for consumption by other PHP console scripts. Always overrides the --bash option. A single requested key will be serialized directly. Multiple requested keys will be combined into an associative array with the provided arguments as key names and then serialized.')
+				'help' => __('Encode all output using PHP\'s `serialize()` method. Makes the Shell\'s output suitable for consumption by other PHP console scripts. Always overrides the --bash option. A single requested key will be serialized directly. Multiple requested keys will be combined into an associative array with the provided arguments as key names and then serialized.'),
 			])
 			->description(
 				__('Provides CLI access to variables defined in the Configure class of the host CakePHP application. Will output the value of any keys passed as arguments. Equivelant to `Configure::read(\'Key.Name\')`. Unrecognized keys will produce empty string or `null` output.')

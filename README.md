@@ -15,7 +15,7 @@ A CakePHP plugin that provides a Shell to read an app's Configure vars from the 
 
 ## Requirements
 
-* CakePHP 3.0.0+
+* CakePHP 3.1.0+
 * PHP 5.6+
 
 
@@ -50,7 +50,7 @@ To use this plugin, call it from the command line:
 
 ```shell
 $ cd path/to/app/
-$ ./bin/cake ConfigRead.ConfigRead Key.Name
+$ ./bin/cake config_read Key.Name
 'foo'
 ```
 
@@ -67,7 +67,7 @@ SECOND_KEY_THIRD='42'
 Note that this format is automatically used whenever more than one key is returned (unless the `--serialize` switch has been used). For example, if you request a key that contains an array, all values in the array will be returned sequentially. Alternatively, if you pass multiple keys on the command line, they will all be returned. The format can also be forced using the `-b` or `--bash` command line switch:
 
 ```shell
-$ ./bin/cake ConfigRead.ConfigRead -b Key.Name
+$ ./bin/cake config_read -b Key.Name
 KEY_NAME='foo'
 ```
 
@@ -80,7 +80,7 @@ Requesting multiple keys on the command line will produce an array of those keys
 This switch always overrides both the `--bash` switch and the Shell's automatic bash formatting.
 
 ```shell
-$ ./bin/cake ConfigRead.ConfigRead -s Key.Name Second.Key
+$ ./bin/cake config_read -s Key.Name Second.Key
 a:2:{s:8:"Key.Name";s:3:"foo";s:10:"Second.Key";a:3:{s:5:"First";s:3:"bar";s:6:"Second";s:3:"baz";s:5:"Third";i:42;}}
 # Check the result by piping into PHP and unserializing the result.
 $ ./bin/cake ConfigRead.ConfigRead -s Key.Name Second.Key | php -r 'print_r(unserialize(file_get_contents("php://stdin")));'
@@ -123,6 +123,10 @@ The "gotcha" here is that ConfigReadShell has to maintain a hard-coded list of C
 
 
 ## Contributing
+
+### Code of Conduct
+
+This project has adopted the Contributor Covenant as its [code of conduct](CODE_OF_CONDUCT.md). All contributors are expected to adhere to this code. [Translations are available](http://contributor-covenant.org/).
 
 ### Reporting Issues
 

@@ -6,3 +6,17 @@ app/[Cc]onfig/core.php
 app/[Cc]onfig/database.php
 !empty
 /vendor/*
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
