@@ -103,7 +103,7 @@ Array
 
 ### "Consumed" Configure Vars
 
-CakePHP 3 by default "consumes" some of its configs so as not to confused developers. [`Configure::consume()`](http://book.cakephp.org/3.0/en/development/configuration.html#Cake\Core\Configure::consume) removes the configuration key from Configure, making it unavailable to the rest of the app. At the [time of this writing](https://github.com/cakephp/app/blob/a0f2c4/config/bootstrap.php#L136,L141), it does this for the following keys/classes:
+CakePHP 3 by default "consumes" some of its configs so as not to confuse developers. [`Configure::consume()`](http://book.cakephp.org/3.0/en/development/configuration.html#Cake\Core\Configure::consume) removes the configuration key from Configure, making it unavailable to the rest of the app. At the [time of this writing](https://github.com/cakephp/app/blob/a0f2c4/config/bootstrap.php#L136,L141), it does this for the following keys/classes:
 
 | _`[Configure.Key]`_  | _`Class::configEnumerationMethod()`_  | _`Class::configFetchMethod()`_  |
 |----------------------|---------------------------------------|---------------------------------|
@@ -143,4 +143,4 @@ When developing this plugin, please fork and issue a PR for any new development.
 
 ## Copyright
 
-[Loadsys Web Strategies](http://www.loadsys.com) 2015
+[Loadsys Web Strategies](http://www.loadsys.com) 2016
