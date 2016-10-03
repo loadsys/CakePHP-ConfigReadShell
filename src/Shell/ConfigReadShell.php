@@ -326,6 +326,7 @@ class ConfigReadShell extends Shell {
 		// Base case.
 		if (!is_array($val)) {
 			$this->printVal($key, $val);
+
 			return;
 		}
 
@@ -407,6 +408,7 @@ class ConfigReadShell extends Shell {
 			->epilog(
 				__('Provide the Key.name(s) to fetch from Configure::read() as arguments. Multiple keys may be specified, separated by spaces.')
 			);
+
 		return $parser;
 	}
 }
