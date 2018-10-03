@@ -105,19 +105,19 @@ Array
 
 CakePHP 3 by default "consumes" some of its configs so as not to confuse developers. [`Configure::consume()`](http://book.cakephp.org/3.0/en/development/configuration.html#Cake\Core\Configure::consume) removes the configuration key from Configure, making it unavailable to the rest of the app. At the [time of this writing](https://github.com/cakephp/app/blob/a0f2c4/config/bootstrap.php#L136,L141), it does this for the following keys/classes:
 
-| _`[Configure.Key]`_  | _`Class::configEnumerationMethod()`_  | _`Class::configFetchMethod()`_  |
-|----------------------|---------------------------------------|---------------------------------|
-| `[Cache]`            | `Cache::configured()`                 | `Cache::config()`               |
-| `[Datasources]`      | `ConnectionManager::configured()`     | `ConnectionManager::config()`   |
-| `[EmailTransport]`   | `Email::configuredTransport()`        | `Email::configTransport()`      |
-| `[Email]`            | `Email::configured()`                 | `Email::config()`               |
-| `[Log]`              | `Log::configured()`                   | `Log::config()`                 |
-| `[Security.salt]`    | _(none)_                              | `Security::salt()`              |
+| _`[Configure.Key]`_  | _`Class::configEnumerationMethod()`_  | _`Class::configFetchMethod()`_    |
+|----------------------|---------------------------------------|-----------------------------------|
+| `[Cache]`            | `Cache::configured()`                 | `Cache::getConfig()`              |
+| `[Datasources]`      | `ConnectionManager::configured()`     | `ConnectionManager::getConfig()`  |
+| `[EmailTransport]`   | `Email::configuredTransport()`        | `Email::getConfigTransport()`     |
+| `[Email]`            | `Email::configured()`                 | `Email::getConfig()`              |
+| `[Log]`              | `Log::configured()`                   | `Log::getConfig()`                |
+| `[Security.salt]`    | _(none)_                              | `Security::getSalt()`             |
 
 
-The ConfigReadShell devotes about half of its codebase dealing with this for you, allowing you to continue to fetch values using the Configure path (`Datasources.default.host` -> `localhost`) while in the background it is actually querying `ConnectionManager::config('default')['host']`. (This is particularly helpful if you are using [Environment-Aware Configs](https://github.com/beporter/CakePHP-EnvAwareness/tree/master/slides).)
+The ConfigReadShell devotes about half of its codebase dealing with this for you, allowing you to continue to fetch values using the Configure path (`Datasources.default.host` -> `localhost`) while in the background it is actually querying `ConnectionManager::getConfig('default')['host']`. (This is particularly helpful if you are using [Environment-Aware Configs](https://github.com/beporter/CakePHP-EnvAwareness/tree/master/slides).)
 
-The "gotcha" here is that ConfigReadShell has to maintain a hard-coded list of Configure keys that are normally consumed, and how to access them in their new container. This is further complicated by the fact that not all consumed configs are loaded into or retrieved from their containers the same way, although the base assumption is that the container implements the [`StaticConfigTrait`](http://api.cakephp.org/3.0/class-Cake.Core.StaticConfigTrait.html) and so will have `::config()` and `::configured()` available.
+The "gotcha" here is that ConfigReadShell has to maintain a hard-coded list of Configure keys that are normally consumed, and how to access them in their new container. This is further complicated by the fact that not all consumed configs are loaded into or retrieved from their containers the same way, although the base assumption is that the container implements the [`StaticConfigTrait`](http://api.cakephp.org/3.0/class-Cake.Core.StaticConfigTrait.html) and so will have `::getConfig()` and `::configured()` available.
 
 :warning: **If your app uses `Configure::consume()` on any non-standard Configure key during bootstrapping, you will not be able to obtain any child values of those keys from the ConfigReadShell.**
 

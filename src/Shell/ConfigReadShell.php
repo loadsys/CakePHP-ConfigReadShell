@@ -47,12 +47,12 @@ class ConfigReadShell extends Shell {
 	 * Cake 3 uses Configure::consume() on a number of Configure keys to
 	 * prime different Cake modules in `config/boostrap.php`.
 	 *
-	 * Cache::config(Configure::consume('Cache'));
-	 * ConnectionManager::config(Configure::consume('Datasources'));
-	 * Email::configTransport(Configure::consume('EmailTransport'));
-	 * Email::config(Configure::consume('Email'));
-	 * Log::config(Configure::consume('Log'));
-	 * Security::salt(Configure::consume('Security.salt'));
+	 * Cache::setConfig(Configure::consume('Cache'));
+	 * ConnectionManager::setConfig(Configure::consume('Datasources'));
+	 * Email::setConfigTransport(Configure::consume('EmailTransport'));
+	 * Email::setConfig(Configure::consume('Email'));
+	 * Log::setConfig(Configure::consume('Log'));
+	 * Security::setSalt(Configure::consume('Security.salt'));
 	 *
 	 * This removes the configs from Configure, making them inaccessible
 	 * through standard means in this Shell.
@@ -60,16 +60,16 @@ class ConfigReadShell extends Shell {
 	 * This property tracks specific key names and the class::method they
 	 * map to so we can perform the correct logic to fetch the values. For
 	 * example, a request for `Cache._cake_core_.className` would result
-	 * in a call like `\Cake\Cache\Cache::config('_cake_core_')['className']`.
+	 * in a call like `\Cake\Cache\Cache::getConfig('_cake_core_')['className']`.
 	 *
 	 * @var array
 	 */
 	public $specialKeys = [
-		'Cache' => '\Cake\Cache\Cache::config',
-		'Datasources' => '\Cake\Datasource\ConnectionManager::config',
-		'EmailTransport' => '\Cake\Mailer\Email::configTransport',
-		'Email' => '\Cake\Mailer\Email::config',
-		'Log' => '\Cake\Log\Log::config',
+		'Cache' => '\Cake\Cache\Cache::getConfig',
+		'Datasources' => '\Cake\Datasource\ConnectionManager::getConfig',
+		'EmailTransport' => '\Cake\Mailer\Email::getConfigTransport',
+		'Email' => '\Cake\Mailer\Email::getConfig',
+		'Log' => '\Cake\Log\Log::getConfig',
 		'Security.salt' => 'self::securitySaltHelper',
 	];
 
@@ -100,7 +100,7 @@ class ConfigReadShell extends Shell {
 		}
 
 		// All other output should not be processed by the Shell.
-		$this->_io->outputAs(ConsoleOutput::RAW);
+		$this->_io->setOutputAs(ConsoleOutput::RAW);
 	}
 
 	/**
@@ -262,16 +262,16 @@ class ConfigReadShell extends Shell {
 	 * There are three cases to handle:
 	 *
 	 *   1. A "deep" subkey like `Cache.default.className`. In this case,
-	 *      we need to fetch `Cache::config('default')` and then return
+	 *      we need to fetch `Cache::getConfig('default')` and then return
 	 *      the ['className'] from the result.
 	 *
 	 *   2. A single config array like `Cache.default. We need to fetch
-	 *      `Cache::config('default')` and return the whole thing.
+	 *      `Cache::getConfig('default')` and return the whole thing.
 	 *
 	 *   3. All configs in a module like `Cache`. In this case we need to
 	 *      try calling `Cache::configured()` (if it exists), then looping
 	 *      over the results using each as a key name for a separate call
-	 *      to `Cache::config($name)` and accumulating all of the results
+	 *      to `Cache::getConfig($name)` and accumulating all of the results
 	 *      together to return.
 	 *
 	 * @param array $special An array containing at least a [callable] key and possibly [arg] and [subkey]s.
@@ -282,7 +282,7 @@ class ConfigReadShell extends Shell {
 			$set = call_user_func($special['callable'], $special['arg']);
 		} else {
 			$allConfigCallable = str_replace(
-				'::config',
+				'::getConfig',
 				'::configured',
 				$special['callable'],
 				$replaceCount
@@ -362,20 +362,20 @@ class ConfigReadShell extends Shell {
 	/**
 	 * Provides a custom helper for fetching the App's Security.salt value.
 	 *
-	 * The call to Security::salt() method requires no arguments to get the
+	 * The call to Security::getSalt() method requires no arguments to get the
 	 * current value but we will have split the command line request for
 	 * `Security.salt` into
-	 * `call_user_func('\Cake\Utility\Security::salt', 'salt'). That will
+	 * `call_user_func('\Cake\Utility\Security::getSalt', 'salt'). That will
 	 * **set** the salt to `salt` and return "salt" as the new value, which
 	 * isn't what we want. This method exists to be the callable function,
-	 * which itself passes the proper `null` value as the argument, which
-	 * in turn will return the _actual_ salt value.
+	 * which itself passes no arguments to getSalt, which in turn will return
+	 * the _actual_ salt value.
 	 *
 	 * @param string $salt Because of how this is implemented, this will always be the literal string "salt" and will be ignored.
-	 @return string The result of calling `Security::salt(null);`
+	 * @return string The result of calling `Security::getSalt();`
 	 */
 	private function securitySaltHelper($salt) {
-		return call_user_func('\Cake\Utility\Security::salt', null);
+		return call_user_func('\Cake\Utility\Security::getSalt');
 	}
 
 	/**
@@ -402,10 +402,10 @@ class ConfigReadShell extends Shell {
 				'default' => false,
 				'help' => __('Encode all output using PHP\'s `serialize()` method. Makes the Shell\'s output suitable for consumption by other PHP console scripts. Always overrides the --bash option. A single requested key will be serialized directly. Multiple requested keys will be combined into an associative array with the provided arguments as key names and then serialized.'),
 			])
-			->description(
+			->setDescription(
 				__('Provides CLI access to variables defined in the Configure class of the host CakePHP application. Will output the value of any keys passed as arguments. Equivelant to `Configure::read(\'Key.Name\')`. Unrecognized keys will produce empty string or `null` output.')
 			)
-			->epilog(
+			->setEpilog(
 				__('Provide the Key.name(s) to fetch from Configure::read() as arguments. Multiple keys may be specified, separated by spaces.')
 			);
 
