@@ -15,8 +15,8 @@ A CakePHP plugin that provides a Shell to read an app's Configure vars from the 
 
 ## Requirements
 
-* CakePHP 3.1.0+
-* PHP 5.6+
+* PHP 7.0+
+* CakePHP 3.6.0+
 
 
 ## Installation
@@ -143,4 +143,4 @@ When developing this plugin, please fork and issue a PR for any new development.
 
 ## Copyright
 
-[Loadsys Web Strategies](http://www.loadsys.com) 2016
+[Loadsys Web Strategies](http://www.loadsys.com) 2018
