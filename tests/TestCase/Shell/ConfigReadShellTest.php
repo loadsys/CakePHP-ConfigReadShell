@@ -203,7 +203,7 @@ class ConfigReadShellTest extends TestCase {
 	 */
 	protected function initSUT($additionalMocks = []) {
 		$defaultMocks = [
-			'_displayHelp', 'error',
+			'_displayHelp', 'abort',
 		];
 
 		$this->io = $this->getMockBuilder('\Cake\Console\ConsoleIo')
@@ -222,7 +222,7 @@ class ConfigReadShellTest extends TestCase {
 			->getMock();
 
 		$shell->expects($this->any())
-			->method('error')
+			->method('abort')
 			->with($this->anything())
 			->will($this->returnCallback([$this, 'outputCollector']));
 		$shell->OptionParser = $this->getMockBuilder('\Cake\Console\ConsoleOptionParser')
