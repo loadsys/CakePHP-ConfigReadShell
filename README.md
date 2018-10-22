@@ -8,22 +8,29 @@
 
 A CakePHP plugin that provides a Shell to read an app's Configure vars from the command line.
 
-* This is the Cake 3.x version of the plugin, which exists on the `master` branch and is tracked by the `~3.0` semver.
-* For the Cake 2.x version of this plugin, please use the repo's `cake-2.x` branch. (semver `~2.0`)
-* For the Cake 1.3 version, use the `cake-1.3` branch. (semver `~1.0`) **Note:** we don't expect to actively maintain or improve the 1.3 version. It's here because the project started life as a 1.3 Shell.
+## Installation
+Use the following as a guide for choosing your version based on the version of CakePHP installed.
 
+| CakePHP | ConfigReadShell Plugin | Tag   | Notes |
+| :-------------: | :------------------------: | :--:  | :---- |
+| ^3.4            | [master](https://github.com/loadsys/CakePHP-ConfigReadShell/tree/master)            | 4.0.0 | stable   |
+| 3.3             | [3.3](https://github.com/loadsys/CakePHP-ConfigReadShell/tree/3.0.0)                | 3.0.0 | stable   |
+| 2.5             | [2.x](https://github.com/loadsys/CakePHP-ConfigReadShell/tree/2.0.1)                | 2.0.1 | stable   |
+| 1.3             | [1.x](https://github.com/loadsys/CakePHP-ConfigReadShell/tree/1.0.1)                  | 1.0.1   | stable   |
+
+
+### This will install the latest version.
+```bash
+$ composer require loadsys/cakephp-config-read:~4.0
+```
+
+**Note:** we don't expect to actively maintain or improve the 1.3 version. It's here because the project started life as a 1.3 Shell.
 
 ## Requirements
 
-* CakePHP 3.1.0+
-* PHP 5.6+
+* PHP 7.0+
+* CakePHP 3.6.0+
 
-
-## Installation
-
-```bash
-$ composer require loadsys/cakephp-config-read:~3.0
-```
 
 
 ## Usage
@@ -105,19 +112,19 @@ Array
 
 CakePHP 3 by default "consumes" some of its configs so as not to confuse developers. [`Configure::consume()`](http://book.cakephp.org/3.0/en/development/configuration.html#Cake\Core\Configure::consume) removes the configuration key from Configure, making it unavailable to the rest of the app. At the [time of this writing](https://github.com/cakephp/app/blob/a0f2c4/config/bootstrap.php#L136,L141), it does this for the following keys/classes:
 
-| _`[Configure.Key]`_  | _`Class::configEnumerationMethod()`_  | _`Class::configFetchMethod()`_  |
-|----------------------|---------------------------------------|---------------------------------|
-| `[Cache]`            | `Cache::configured()`                 | `Cache::config()`               |
-| `[Datasources]`      | `ConnectionManager::configured()`     | `ConnectionManager::config()`   |
-| `[EmailTransport]`   | `Email::configuredTransport()`        | `Email::configTransport()`      |
-| `[Email]`            | `Email::configured()`                 | `Email::config()`               |
-| `[Log]`              | `Log::configured()`                   | `Log::config()`                 |
-| `[Security.salt]`    | _(none)_                              | `Security::salt()`              |
+| _`[Configure.Key]`_  | _`Class::configEnumerationMethod()`_  | _`Class::configFetchMethod()`_    |
+|----------------------|---------------------------------------|-----------------------------------|
+| `[Cache]`            | `Cache::configured()`                 | `Cache::getConfig()`              |
+| `[Datasources]`      | `ConnectionManager::configured()`     | `ConnectionManager::getConfig()`  |
+| `[EmailTransport]`   | `Email::configuredTransport()`        | `Email::getConfigTransport()`     |
+| `[Email]`            | `Email::configured()`                 | `Email::getConfig()`              |
+| `[Log]`              | `Log::configured()`                   | `Log::getConfig()`                |
+| `[Security.salt]`    | _(none)_                              | `Security::getSalt()`             |
 
 
-The ConfigReadShell devotes about half of its codebase dealing with this for you, allowing you to continue to fetch values using the Configure path (`Datasources.default.host` -> `localhost`) while in the background it is actually querying `ConnectionManager::config('default')['host']`. (This is particularly helpful if you are using [Environment-Aware Configs](https://github.com/beporter/CakePHP-EnvAwareness/tree/master/slides).)
+The ConfigReadShell devotes about half of its codebase dealing with this for you, allowing you to continue to fetch values using the Configure path (`Datasources.default.host` -> `localhost`) while in the background it is actually querying `ConnectionManager::getConfig('default')['host']`. (This is particularly helpful if you are using [Environment-Aware Configs](https://github.com/beporter/CakePHP-EnvAwareness/tree/master/slides).)
 
-The "gotcha" here is that ConfigReadShell has to maintain a hard-coded list of Configure keys that are normally consumed, and how to access them in their new container. This is further complicated by the fact that not all consumed configs are loaded into or retrieved from their containers the same way, although the base assumption is that the container implements the [`StaticConfigTrait`](http://api.cakephp.org/3.0/class-Cake.Core.StaticConfigTrait.html) and so will have `::config()` and `::configured()` available.
+The "gotcha" here is that ConfigReadShell has to maintain a hard-coded list of Configure keys that are normally consumed, and how to access them in their new container. This is further complicated by the fact that not all consumed configs are loaded into or retrieved from their containers the same way, although the base assumption is that the container implements the [`StaticConfigTrait`](http://api.cakephp.org/3.0/class-Cake.Core.StaticConfigTrait.html) and so will have `::getConfig()` and `::configured()` available.
 
 :warning: **If your app uses `Configure::consume()` on any non-standard Configure key during bootstrapping, you will not be able to obtain any child values of those keys from the ConfigReadShell.**
 
@@ -143,4 +150,4 @@ When developing this plugin, please fork and issue a PR for any new development.
 
 ## Copyright
 
-[Loadsys Web Strategies](http://www.loadsys.com) 2016
+[Loadsys Web Strategies](http://www.loadsys.com) 2018

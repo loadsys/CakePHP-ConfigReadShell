@@ -88,10 +88,10 @@ class ConfigReadShellTest extends TestCase {
 	 */
 	public static function setUpBeforeClass() {
 		// Prime the ConnectionManager with some configs.
-		ConnectionManager::config(self::$datasources);
+		ConnectionManager::setConfig(self::$datasources);
 
 		// Prime the security salt.
-		Security::salt(self::$salt);
+		Security::setSalt(self::$salt);
 	}
 
 	/**
@@ -104,7 +104,7 @@ class ConfigReadShellTest extends TestCase {
 			ConnectionManager::drop($ds);
 		}
 
-		Security::salt('');
+		Security::setSalt('');
 	}
 
 	/**
@@ -203,29 +203,32 @@ class ConfigReadShellTest extends TestCase {
 	 */
 	protected function initSUT($additionalMocks = []) {
 		$defaultMocks = [
-			'_displayHelp', 'error',
+			'_displayHelp', 'abort',
 		];
 
-		$this->io = $this->getMock('\Cake\Console\ConsoleIo', [], [], '', false);
+		$this->io = $this->getMockBuilder('\Cake\Console\ConsoleIo')
+			->disableOriginalConstructor()
+			->getMock();
 		$this->io->expects($this->any())
 			->method('out')
 			->with($this->anything())
 			->will($this->returnCallback([$this, 'outputCollector']));
 
-
 		$class = $this->getSUTClassName();
 		$mockedMethods = array_merge($defaultMocks, $additionalMocks);
-		$shell = $this->getMock(
-			$class,
-			$mockedMethods,
-			[$this->io]
-		);
+		$shell = $this->getMockBuilder($class)
+			->setMethods($mockedMethods)
+			->setConstructorArgs([$this->io])
+			->getMock();
 
 		$shell->expects($this->any())
-			->method('error')
+			->method('abort')
 			->with($this->anything())
 			->will($this->returnCallback([$this, 'outputCollector']));
-		$shell->OptionParser = $this->getMock('\Cake\Console\ConsoleOptionParser', [], [null, false]);
+		$shell->OptionParser = $this->getMockBuilder('\Cake\Console\ConsoleOptionParser')
+			->setMethods([])
+			->setConstructorArgs([null, false])
+			->getMock();
 		$shell->params = [
 			'help' => false,
 			'verbose' => false,
@@ -253,7 +256,7 @@ class ConfigReadShellTest extends TestCase {
 		$this->Shell->expects($this->once())
 			->method('_displayHelp');
 
-		Cache::config('_cake_core_', [
+		Cache::setConfig('_cake_core_', [
 			'className' => 'File',
 		]);
 		$this->Shell->startup();
@@ -481,7 +484,6 @@ class ConfigReadShellTest extends TestCase {
 			],
 		];
 	}
-
 
 	/**
 	 * test main(), requesting "special" config keys.

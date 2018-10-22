@@ -3,14 +3,13 @@ language: php
 sudo: false
 
 php:
-  - 5.6
+  - 7.2
 
 # Environment Variables to set
 env:
   global:
     # Contains a $GITHUB_TOKEN env var for use with composer to avoid API limits.
     - secure: "JPIIdecDmF2AsgH3b5QWYzr2TunB4tpIBl0/64EGsWZ+5A85Co3NN+eSshgWI5vOjaaJji/S2rKwMRvV9h/YceTL/UH5D2xd/HobRpHAaJSyjp5cplQawokzR/+PrikjmbwTZdeiIaHpUMCqbQvV2+Jq+Vx5vD28+hya1yTdQsk="
-
 
 # Cache the composer directories, only allowed if using the container based setup
 # which depends on setting sudo to false
@@ -29,8 +28,7 @@ before_install:
   - mkdir -p build/logs
 
 install:
-  - composer config -g github-oauth.github.com $GITHUB_TOKEN
-  - composer install --no-interaction
+  - composer install --dev --no-interaction
 
 before_script:
   - phpenv rehash
@@ -40,8 +38,8 @@ script:
   - vendor/bin/phpcs -np --extensions=php --standard=Loadsys ./src ./tests
   - vendor/bin/phpunit --coverage-clover=build/logs/clover.xml
 
-after_script:
-  - php vendor/bin/coveralls -v
+after_success:
+  - travis_retry php vendor/bin/php-coveralls -v
 
 notifications:
   email: false
