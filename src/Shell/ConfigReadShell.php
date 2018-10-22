@@ -96,7 +96,7 @@ class ConfigReadShell extends Shell {
 
 		if (empty($this->args)) {
 			$this->_displayHelp('');
-			$this->error(__('No Configure keys provided.'));
+			$this->abort(__('No Configure keys provided.'));
 		}
 
 		// All other output should not be processed by the Shell.
