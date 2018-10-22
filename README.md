@@ -8,22 +8,29 @@
 
 A CakePHP plugin that provides a Shell to read an app's Configure vars from the command line.
 
-* This is the Cake 3.x version of the plugin, which exists on the `master` branch and is tracked by the `~3.0` semver.
-* For the Cake 2.x version of this plugin, please use the repo's `cake-2.x` branch. (semver `~2.0`)
-* For the Cake 1.3 version, use the `cake-1.3` branch. (semver `~1.0`) **Note:** we don't expect to actively maintain or improve the 1.3 version. It's here because the project started life as a 1.3 Shell.
+## Installation
+Use the following as a guide for choosing your version based on the version of CakePHP installed.
 
+| CakePHP | ConfigReadShell Plugin | Tag   | Notes |
+| :-------------: | :------------------------: | :--:  | :---- |
+| ^3.4            | [master](https://github.com/loadsys/CakePHP-ConfigReadShell/tree/master)            | 4.0.0 | stable   |
+| 3.3             | [3.3](https://github.com/loadsys/CakePHP-ConfigReadShell/tree/3.0.0)                | 3.0.0 | stable   |
+| 2.5             | [2.x](https://github.com/loadsys/CakePHP-ConfigReadShell/tree/2.0.1)                | 2.0.1 | stable   |
+| 1.3             | [1.x](https://github.com/loadsys/CakePHP-ConfigReadShell/tree/1.0.1)                  | 1.0.1   | stable   |
+
+
+### This will install the latest version.
+```bash
+$ composer require loadsys/cakephp-config-read:~4.0
+```
+
+**Note:** we don't expect to actively maintain or improve the 1.3 version. It's here because the project started life as a 1.3 Shell.
 
 ## Requirements
 
 * PHP 7.0+
 * CakePHP 3.6.0+
 
-
-## Installation
-
-```bash
-$ composer require loadsys/cakephp-config-read:~3.0
-```
 
 
 ## Usage
